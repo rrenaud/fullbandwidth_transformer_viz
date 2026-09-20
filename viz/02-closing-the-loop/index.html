@@ -79,8 +79,6 @@ h1 a{color:var(--muted);font-size:13px;font-weight:400;margin-left:10px;text-dec
 .btn[aria-pressed="true"]{background:var(--blue-soft);border-color:var(--blue)}
 button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .tickread{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;min-width:5.5em}
-.passpick{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted)}
-.passpick .btn{font-size:13.5px;padding:3px 10px;min-width:32px}
 
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
@@ -127,7 +125,6 @@ footer a{color:inherit}
       <button class="btn" id="reset">Reset</button>
       <span class="tickread" id="tickread">0 / 18</span>
     </div>
-    <div class="passpick" id="passpick">passes</div>
     <div class="legend">
       <span><i class="sw wire"></i>latent bus, by source position</span>
       <span><i class="sw" style="background:var(--yellow-soft);border-color:var(--yellow)"></i>firing now</span>
@@ -168,7 +165,7 @@ footer a{color:inherit}
 <footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
-const T=10, L=5, MAXP=4, RHO=0.4;
+const T=10, L=5, PASSES=3, RHO=0.4;
 const words=["The","cat","sat","on","the","warm","mat","by","the","door"];
 const NS="http://www.w3.org/2000/svg";
 
@@ -184,15 +181,15 @@ const X=t=>PADL+(t-1)*COLW+(COLW-CW)/2;
 // inside a pass, so a pass's latent row (the top of its block) ends up directly
 // beneath the next pass's input row (the bottom of the block above it): the handoff
 // is one short step up and one column right, with nothing to route around.
-const blockTop=p=>TOP0+(passes-p)*PITCH;
+const blockTop=p=>TOP0+(PASSES-p)*PITCH;
 const Y=(p,l)=>blockTop(p)+(L-l)*ROWH;
 const GRIDR=X(T)+CW;
 const VB_W=GRIDR+14;
 
 const SUB=L+1;                       // sub-step 0 = inject inputs + latents, 1..L = layer sweep
-let passes=3, step=0, playing=false, timer=null, hover=null;
-const totalSteps=()=>passes*SUB;
-const vbH=()=>Y(1,0)+CH+36;
+let step=0, playing=false, timer=null, hover=null;
+const TOTAL=PASSES*SUB;
+const VB_H=Y(1,0)+CH+36;
 const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
 
 // err[p][t]: how far position t's states in pass p still sit from the fixed point.
@@ -204,7 +201,7 @@ const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
 // off it is ever shown - a reader would take three decimals for a measurement.
 const err={};
 err[1]=Array.from({length:T+1},(_,t)=>t<=1?0:1);
-for(let p=2;p<=MAXP;p++) err[p]=Array.from({length:T+1},(_,t)=>t<=1?0:RHO*err[p-1][t-1]);
+for(let p=2;p<=PASSES;p++) err[p]=Array.from({length:T+1},(_,t)=>t<=1?0:RHO*err[p-1][t-1]);
 const exactThrough=p=>{let n=0;for(let t=1;t<=T;t++){if(err[p][t]>0)break;n=t;}return n;};
 
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
@@ -227,12 +224,12 @@ const costnote=document.getElementById('costnote');
 
 function render(){
   const s=step;
-  svg.setAttribute('viewBox',`0 0 ${VB_W} ${vbH()}`);
+  svg.setAttribute('viewBox',`0 0 ${VB_W} ${VB_H}`);
   svg.innerHTML='';
   const now=s>0?{p:Math.floor((s-1)/SUB)+1,l:(s-1)%SUB}:null;
 
   // Hovering a latent draws the two columns it ties together, one position apart.
-  if(hover&&hover.kind==='latent'&&hover.p<passes){
+  if(hover&&hover.kind==='latent'&&hover.p<PASSES){
     for(const [t,p] of [[hover.t,hover.p],[hover.t+1,hover.p+1]]){
       el('line',{x1:X(t)+CW/2,y1:blockTop(p)-2,x2:X(t)+CW/2,y2:Y(p,0)+CH+2,
         stroke:wire(hover.t),'stroke-width':1.2,'stroke-opacity':.55,'stroke-dasharray':'2 3'},svg);
@@ -241,14 +238,14 @@ function render(){
 
   for(let t=1;t<=T;t++) txt(svg,words[t-1],{x:X(t)+CW/2,y:18,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});
   txt(svg,'tokens',{x:PADL-12,y:18,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
-  txt(svg,passes>1?'row L = z, the latent handed up to the next pass':'row L = z, the latent a vanilla pass throws away',
-    {x:GRIDR,y:blockTop(passes)-12,'text-anchor':'end','font-size':10,fill:passes>1?'var(--blue)':'var(--muted)','font-style':'italic'});
+  txt(svg,'row L = z, the latent handed up to the next pass',
+    {x:GRIDR,y:blockTop(PASSES)-12,'text-anchor':'end','font-size':10,fill:'var(--blue)','font-style':'italic'});
 
-  for(let p=1;p<passes;p++) drawBus(p,s);
+  for(let p=1;p<PASSES;p++) drawBus(p,s);
   drawZeroTaps(s);
-  for(let p=1;p<=passes;p++) drawBlock(p,s,now);
+  for(let p=1;p<=PASSES;p++) drawBlock(p,s,now);
 
-  tickread.textContent=`${s} / ${totalSteps()}`;
+  tickread.textContent=`${s} / ${TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
   drawTable(now);
   drawReadout(now);
@@ -331,7 +328,7 @@ function drawBlock(p,s,now){
     el('rect',{x:X(t),y:Y(p,l),width:CW,height:CH,rx:3,fill,'fill-opacity':fo,stroke,'stroke-width':sw,'stroke-dasharray':dash,'pointer-events':'all'},g);
     // The same colour marks both ends of one hop: a cap on the latent it leaves,
     // the arrowhead and z-label on the input it joins, one column to the right.
-    if(done&&l===L&&t<T&&p<passes){
+    if(done&&l===L&&t<T&&p<PASSES){
       el('rect',{x:X(t)+3,y:Y(p,L)-1.5,width:CW-6,height:3,rx:1.5,fill:wire(t)},g);
     }
     if(done&&l===0&&t>1&&p>1){
@@ -347,13 +344,13 @@ function drawBlock(p,s,now){
 
 function drawTable(now){
   tbody.innerHTML='';
-  for(let p=1;p<=passes;p++){
+  for(let p=1;p<=PASSES;p++){
     const tr=document.createElement('tr');
     if(now&&now.p===p) tr.className='on';
     tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`;
     tbody.appendChild(tr);
   }
-  costnote.textContent=`${passes}× the forward work per step here`;
+  costnote.textContent=`${PASSES}× the forward work per step here`;
 }
 
 function drawReadout(now){
@@ -361,8 +358,8 @@ function drawReadout(now){
     const {p,t}=hover;
     const e=err[p][t];
     const state=e===0?'already at the fixed point':'not yet at the fixed point';
-    const dot=p<passes?`<span style="color:${wire(t)}">\u25CF</span> `:'';
-    readout.innerHTML=p<passes
+    const dot=p<PASSES?`<span style="color:${wire(t)}">\u25CF</span> `:'';
+    readout.innerHTML=p<PASSES
       ? `${dot}<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — steps up into <b>position ${t+1}</b>'s input in pass ${p+1}, one column to the right of where it left.`
       : `<b>z<sub>${t}</sub></b> from the final pass: ${state}. Nothing consumes it here — this is the latent the next training step, and inference, would use.`;
     return;
@@ -386,29 +383,16 @@ function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
 function dwell(s){ return (s-1)%SUB===0?900:300; }
 function play(){
   hover=null;
-  if(step>=totalSteps()) step=0;
+  if(step>=TOTAL) step=0;
   playing=true; render();
   const tickOnce=()=>{
-    if(step>=totalSteps()){ stop(); return; }
+    if(step>=TOTAL){ stop(); return; }
     step++; render();
     timer=setTimeout(tickOnce,dwell(step));
   };
   timer=setTimeout(tickOnce,260);
 }
-function move(d){ hover=null; step=Math.max(0,Math.min(totalSteps(),step+d)); render(); }
-
-const passpick=document.getElementById('passpick');
-for(let k=1;k<=MAXP;k++){
-  const b=document.createElement('button');
-  b.className='btn'; b.textContent=k; b.setAttribute('aria-pressed',String(k===passes));
-  b.setAttribute('aria-label',`${k} training pass${k>1?'es':''}`);
-  b.addEventListener('click',()=>{
-    stop(); passes=k; step=Math.min(step,totalSteps()); hover=null;
-    [...passpick.querySelectorAll('button')].forEach((o,i)=>o.setAttribute('aria-pressed',String(i+1===k)));
-    render();
-  });
-  passpick.appendChild(b);
-}
+function move(d){ hover=null; step=Math.max(0,Math.min(TOTAL,step+d)); render(); }
 
 document.getElementById('back').addEventListener('click',()=>{stop();move(-1)});
 document.getElementById('fwd').addEventListener('click',()=>{stop();move(1)});

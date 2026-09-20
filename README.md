@@ -74,9 +74,8 @@ ramp, slid one column to the right. (Nine smooth steps can't carry identity by c
 alone, so the `z` label at the receiving end does that; the ramp carries the ordering.)
 
 Hover or tab any top-row cell to follow one latent around the loop into the position it
-lands in; the pass selector trades passes against how much of the sequence is still
-stale (at one pass, the feedback path is gone and the page shows the vanilla model it
-degenerates to).
+lands in. The figure shows three passes — enough for the staircase to establish itself
+without the page turning into a scroll.
 
 ## Roadmap ideas
 
