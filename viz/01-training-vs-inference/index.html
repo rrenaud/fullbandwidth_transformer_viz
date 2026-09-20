@@ -135,12 +135,6 @@ function unusedCount(mode,f,time){
   return c;
 }
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
-function mathLabel(parent,x,y,base,sub,opts={}){
-  const tx=el('text',{x,y,'text-anchor':opts.anchor||'middle','font-size':opts.size||11,fill:opts.fill||'var(--ink)','font-style':'italic'},parent);
-  const a=document.createElementNS(NS,'tspan');a.textContent=base;tx.appendChild(a);
-  if(sub!==undefined){const b=document.createElementNS(NS,'tspan');b.setAttribute('dy','3');b.setAttribute('font-size','0.72em');b.textContent=sub;tx.appendChild(b);}
-  return tx;
-}
 
 const CONFIG=[
   {mode:'train',  title:'Training'},
@@ -229,12 +223,6 @@ function buildPanel(cfg){
         else if(outOfReach(mode,focus,t,l,time)){fill='var(--red-soft)';stroke='var(--red)';}
       }
       el('rect',{x:X(t),y:Y(l),width:G.cw,height:G.ch,rx:3,fill,stroke,'stroke-width':sw,'stroke-dasharray':dash,'pointer-events':'all'},g);
-      if(l===0 && isComp){
-        const isDirect=focus&&direct(focus,t,0);
-        const c=isDirect?'var(--bg)':'var(--ink)';
-        if(mode==='latent'&&t>1) mathLabel(g,X(t)+G.cw/2,Y(0)+G.ch/2+4,'e⊗h',String(t),{size:9,fill:c});
-        else mathLabel(g,X(t)+G.cw/2,Y(0)+G.ch/2+4,'e',String(t),{size:10.5,fill:c});
-      }
       if(l>0){
         // Hover is shared across all three panels (see hoverCell above), and pointer-events
         // is forced on so even an unpainted (not-yet-computed) cell can be hovered to preview
