@@ -65,6 +65,11 @@ Three things fall out of that, and the page animates all three:
   there when step `t` starts. The iteration is a training-time cost — `k`× the forward
   work — buying a channel that is free at generation time.
 
+Each wire is coloured by the *source* position it carries, and the same colour caps the
+latent it leaves and labels the input it joins — so the whole ribbon is visibly the same
+ramp, slid one column to the right. (Nine smooth steps can't carry identity by colour
+alone, so the `z` label at the receiving end does that; the ramp carries the ordering.)
+
 Hover or tab any top-row cell to follow one latent around the loop into the position it
 lands in; the pass selector trades passes against the residual left on the table (at one
 pass, the feedback path is gone and the page shows the vanilla model it degenerates to).

@@ -14,6 +14,21 @@
   --yellow:#B98A00; --yellow-soft:rgba(185,138,0,.22);
   --red:#D0402F;
   --grey-soft:rgba(0,0,0,.06); --bar:rgba(250,250,247,.92);
+  /* Wire ramp: an ordered cool->magenta sweep indexed by SOURCE position, so the
+     whole ribbon visibly slides one column right between passes. Nine smooth steps
+     cannot clear the categorical adjacency thresholds and are not asked to - a
+     wire's identity is carried by its x-position and by the z-label at the end it
+     lands in; the ramp carries the ordering. Chroma floor and 3:1 contrast against
+     both surfaces are validated. */
+  --w1:#0071a0;
+  --w2:#0070b1;
+  --w3:#236ebe;
+  --w4:#4e6bc6;
+  --w5:#6d69c9;
+  --w6:#8667c7;
+  --w7:#9e65c0;
+  --w8:#b265b6;
+  --w9:#c465a8;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -22,6 +37,15 @@
     --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.26);
     --red:#FC6255;
     --grey-soft:rgba(255,255,255,.07); --bar:rgba(0,0,0,.88);
+    --w1:#00a2b9;
+    --w2:#00a2ce;
+    --w3:#3ba0de;
+    --w4:#619eea;
+    --w5:#819bf1;
+    --w6:#9d98f2;
+    --w7:#b695ef;
+    --w8:#cd94e6;
+    --w9:#e193da;
   }
 }
 :root[data-theme="dark"]{
@@ -30,6 +54,15 @@
   --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.26);
   --red:#FC6255;
   --grey-soft:rgba(255,255,255,.07); --bar:rgba(0,0,0,.88);
+  --w1:#00a2b9;
+  --w2:#00a2ce;
+  --w3:#3ba0de;
+  --w4:#619eea;
+  --w5:#819bf1;
+  --w6:#9d98f2;
+  --w7:#b695ef;
+  --w8:#cd94e6;
+  --w9:#e193da;
 }
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"STIX Two Text","Times New Roman",Georgia,serif;font-size:16px;line-height:1.4}
@@ -52,7 +85,8 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .sw{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid var(--line);flex:none}
-.sw.wire{width:16px;height:0;border:0;border-top:3px solid var(--blue);border-radius:2px}
+.sw.wire{width:22px;height:4px;border:0;border-radius:2px;
+  background:linear-gradient(90deg,var(--w1),var(--w3),var(--w5),var(--w7),var(--w9))}
 
 .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:26px;align-items:start}
 @media (max-width:900px){ .layout{grid-template-columns:1fr} }
@@ -98,7 +132,7 @@ footer a{color:inherit}
     </div>
     <div class="passpick" id="passpick">passes</div>
     <div class="legend">
-      <span><i class="sw wire"></i>latent bus</span>
+      <span><i class="sw wire"></i>latent bus, by source position</span>
       <span><i class="sw" style="background:var(--yellow-soft);border-color:var(--yellow)"></i>firing now</span>
       <span><i class="sw" style="background:var(--blue-soft);border-color:var(--blue)"></i>exact</span>
       <span><i class="sw" style="background:var(--red);border-color:var(--red);opacity:.52"></i>stale latent</span>
@@ -134,7 +168,7 @@ footer a{color:inherit}
   </div>
 </main>
 
-<footer>Each block is one full teacher-forced pass over the same sequence; the wire leaving the top-layer row wraps around and re-enters the next pass's inputs, shifted one position. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers, contraction &rho;&nbsp;=&nbsp;0.4) &mdash; residuals stand in for &Vert;z<sup>(k)</sup>&minus;z<sup>(k&minus;1)</sup>&Vert;, they are not measurements. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Each block is one full teacher-forced pass over the same sequence; the wire leaving the top-layer row wraps around and re-enters the next pass's inputs, shifted one position. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers, contraction &rho;&nbsp;=&nbsp;0.4) &mdash; residuals stand in for &Vert;z<sup>(k)</sup>&minus;z<sup>(k&minus;1)</sup>&Vert;, they are not measurements. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, MAXP=4, RHO=0.4;
@@ -192,6 +226,7 @@ function rpath(pts,r){
   const last=pts[pts.length-1];
   return d+` L${last[0]},${last[1]}`;
 }
+const wire=t=>`var(--w${t})`;
 function strandPts(p,t){
   return [
     [X(t)+CW/2, Y(p,L)],
@@ -220,7 +255,7 @@ function render(){
   if(hover&&hover.kind==='latent'&&hover.p<passes){
     for(const [t,p] of [[hover.t,hover.p],[hover.t+1,hover.p+1]]){
       el('line',{x1:X(t)+CW/2,y1:blockTop(p)-2,x2:X(t)+CW/2,y2:Y(p,0)+CH+2,
-        stroke:'var(--yellow)','stroke-width':1,'stroke-opacity':.5,'stroke-dasharray':'2 3'},svg);
+        stroke:wire(hover.t),'stroke-width':1.2,'stroke-opacity':.55,'stroke-dasharray':'2 3'},svg);
     }
   }
 
@@ -248,21 +283,22 @@ function drawBus(p,s){
   for(let t=1;t<T;t++){
     const d=rpath(strandPts(p,t),5.5);
     const lit=hover&&hover.kind==='latent'&&hover.p===p&&hover.t===t;
-    if(lit) el('path',{d,fill:'none',stroke:'var(--blue)','stroke-width':11,'stroke-opacity':.24,'stroke-linecap':'round'},svg);
-    const strand=el('path',{d,fill:'none',stroke:'var(--blue)','stroke-width':lit?2.4:1.1,
-      'stroke-opacity':lit?1:(live?.75:(delivered?.42:.22)),'stroke-linecap':'round'},svg);
+    const c=wire(t);
+    if(lit) el('path',{d,fill:'none',stroke:c,'stroke-width':11,'stroke-opacity':.22,'stroke-linecap':'round'},svg);
+    const strand=el('path',{d,fill:'none',stroke:c,'stroke-width':lit?2.6:1.3,
+      'stroke-opacity':lit?1:(live?.9:(delivered?.62:.3)),'stroke-linecap':'round'},svg);
     if(!delivered&&!live) strand.setAttribute('stroke-dasharray','3 4');
     if(live){ strand.setAttribute('stroke-dasharray','8 8'); strand.setAttribute('class','flow'); }
     if(delivered||live){
       const x=X(t+1)+CW/2, y=Y(p+1,0)+CH;
-      el('path',{d:`M${x-3.4},${y+6} L${x+3.4},${y+6} L${x},${y+.5} Z`,fill:'var(--blue)','fill-opacity':lit?1:.6},svg);
+      el('path',{d:`M${x-3.9},${y+7} L${x+3.9},${y+7} L${x},${y+.5} Z`,fill:c,'fill-opacity':lit?1:.8},svg);
     }
     const hit=el('path',{d,fill:'none',stroke:'transparent','stroke-width':9,style:'cursor:pointer','pointer-events':'stroke'},svg);
     hit.addEventListener('mouseenter',()=>{if(!playing){hover={kind:'latent',p,t};render();}});
     hit.addEventListener('mouseleave',()=>{if(!playing){hover=null;render();}});
   }
   if(p===1){
-    txt(svg,'shifted one position →',{x:X(2)+CW/2-9,y:busY(2,1)+3.5,'text-anchor':'end','font-size':10,fill:'var(--blue)','font-style':'italic'});
+    txt(svg,'one position right →',{x:X(2)+CW/2-9,y:busY(2,1)+3.5,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
   }
   // While the handoff is on screen, ring the row being handed back as well as the
   // row receiving it, so the two ends of the wire read as one event.
@@ -313,6 +349,15 @@ function drawBlock(p,s,now){
     if(lit||dest){ stroke='var(--yellow)'; sw=2; }
     const g=el('g',{tabindex:l===L?0:-1,style:'cursor:pointer'},svg);
     el('rect',{x:X(t),y:Y(p,l),width:CW,height:CH,rx:3,fill,'fill-opacity':fo,stroke,'stroke-width':sw,'stroke-dasharray':dash,'pointer-events':'all'},g);
+    // The same colour marks both ends of one hop: a cap on the latent it leaves,
+    // the arrowhead and z-label on the input it joins, one column to the right.
+    if(done&&l===L&&t<T&&p<passes){
+      el('rect',{x:X(t)+3,y:Y(p,L)-1.5,width:CW-6,height:3,rx:1.5,fill:wire(t)},g);
+    }
+    if(done&&l===0&&t>1&&p>1){
+      txt(g,`z${t-1}`,{x:X(t)+CW/2,y:Y(p,0)+CH-3.5,'text-anchor':'middle','font-size':7.5,
+        fill:wire(t-1),'font-weight':600,'pointer-events':'none'});
+    }
     const set=()=>{if(!playing){hover={kind:l===L?'latent':'cell',p,t,l};render();}};
     const clear=()=>{if(!playing){hover=null;render();}};
     g.addEventListener('mouseenter',set); g.addEventListener('mouseleave',clear);
@@ -340,8 +385,9 @@ function drawReadout(now){
     const {p,t}=hover;
     const e=err[p][t];
     const state=e===0?'already at the fixed point':`still ${fmt(e)} away from the fixed point`;
+    const dot=p<passes?`<span style="color:${wire(t)}">\u25CF</span> `:'';
     readout.innerHTML=p<passes
-      ? `<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — travels out of the top of the stack, around the block, and into <b>position ${t+1}</b>'s input in pass ${p+1}.`
+      ? `${dot}<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — travels out of the top of the stack, around the block, and into <b>position ${t+1}</b>'s input in pass ${p+1}.`
       : `<b>z<sub>${t}</sub></b> from the final pass: ${state}. Nothing consumes it here — this is the latent the next training step, and inference, would use.`;
     return;
   }
