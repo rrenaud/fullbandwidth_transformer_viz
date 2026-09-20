@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Closing the loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAFAF7; --ink:#1B1B1B; --muted:#6B6B6B; --line:#CFCFCA;
+  --blue:#1F7FA6; --blue-soft:rgba(31,127,166,.16);
+  --yellow:#B98A00; --yellow-soft:rgba(185,138,0,.22);
+  --red:#D0402F;
+  --grey-soft:rgba(0,0,0,.06); --bar:rgba(250,250,247,.92);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000; --ink:#ECECEC; --muted:#9A9A9A; --line:#3A3A3A;
+    --blue:#58C4DD; --blue-soft:rgba(88,196,221,.18);
+    --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.26);
+    --red:#FC6255;
+    --grey-soft:rgba(255,255,255,.07); --bar:rgba(0,0,0,.88);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000; --ink:#ECECEC; --muted:#9A9A9A; --line:#3A3A3A;
+  --blue:#58C4DD; --blue-soft:rgba(88,196,221,.18);
+  --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.26);
+  --red:#FC6255;
+  --grey-soft:rgba(255,255,255,.07); --bar:rgba(0,0,0,.88);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"STIX Two Text","Times New Roman",Georgia,serif;font-size:16px;line-height:1.4}
+main{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 28px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:14px 20px 12px;margin-bottom:20px}
+.topinner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px}
+h1{font-weight:400;font-size:20px;margin:0;letter-spacing:-.01em;white-space:nowrap}
+h1 a{color:var(--muted);font-size:13px;font-weight:400;margin-left:10px;text-decoration:none;border-bottom:1px solid var(--line)}
+
+.transport{display:flex;align-items:center;gap:8px}
+.btn{font:inherit;font-size:15px;background:none;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 13px;cursor:pointer;min-width:40px}
+.btn.primary{font-weight:600}
+.btn[aria-pressed="true"]{background:var(--blue-soft);border-color:var(--blue)}
+button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.tickread{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;min-width:5.5em}
+.passpick{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted)}
+.passpick .btn{font-size:13.5px;padding:3px 10px;min-width:32px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid var(--line);flex:none}
+.sw.wire{width:16px;height:0;border:0;border-top:3px solid var(--blue);border-radius:2px}
+
+.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:26px;align-items:start}
+@media (max-width:900px){ .layout{grid-template-columns:1fr} }
+.stage svg{width:100%;height:auto;display:block}
+.side{position:sticky;top:104px;display:flex;flex-direction:column;gap:18px}
+.side h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;margin:0 0 6px}
+.readout{border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-size:14.5px;min-height:4.6em}
+.readout .dim{color:var(--muted)}
+.notes{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;font-size:14.5px}
+.notes li{padding-left:13px;border-left:2px solid var(--line)}
+.notes b{font-weight:600}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
+tbody th{font-weight:600;text-align:left}
+tbody tr.on{background:var(--yellow-soft)}
+td.resid{white-space:nowrap}
+.bar{display:inline-block;width:46px;height:4px;border-radius:2px;background:var(--grey-soft);vertical-align:middle;margin-right:7px}
+.bar i{display:block;height:100%;min-width:3px;border-radius:2px;background:var(--red)}
+td.exact{color:var(--blue)}
+
+footer{max-width:1180px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+footer a{color:inherit}
+
+.flow{animation:flow .85s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-16}}
+@media (prefers-reduced-motion:reduce){ .flow{animation:none} }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="topinner">
+    <h1>Closing the loop<a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">arXiv:2608.08888</a></h1>
+    <div class="transport">
+      <button class="btn" id="back" aria-label="Step back">&lsaquo;</button>
+      <button class="btn primary" id="play">Play</button>
+      <button class="btn" id="fwd" aria-label="Step forward">&rsaquo;</button>
+      <button class="btn" id="reset">Reset</button>
+      <span class="tickread" id="tickread">0 / 18</span>
+    </div>
+    <div class="passpick" id="passpick">passes</div>
+    <div class="legend">
+      <span><i class="sw wire"></i>latent bus</span>
+      <span><i class="sw" style="background:var(--yellow-soft);border-color:var(--yellow)"></i>firing now</span>
+      <span><i class="sw" style="background:var(--blue-soft);border-color:var(--blue)"></i>exact</span>
+      <span><i class="sw" style="background:var(--red);border-color:var(--red);opacity:.52"></i>stale latent</span>
+      <span><i class="sw" style="border-style:dashed"></i>pending</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="layout">
+    <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked top to bottom; each pass hands its top-layer latents back to the next pass's inputs, shifted one position"></svg></section>
+    <aside class="side">
+      <div>
+        <h2>Right now</h2>
+        <div class="readout" id="readout"></div>
+      </div>
+      <div>
+        <h2>Convergence</h2>
+        <table>
+          <thead><tr><th>Pass</th><th>Exact&nbsp;through</th><th>Max residual</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div>
+        <h2>Why the loop needs unrolling</h2>
+        <ul class="notes">
+          <li><b>One pass can't see its own latents.</b> Teacher forcing runs every position at once, but position <i>t</i> wants <i>z</i><sub><i>t</i>&minus;1</sub> &mdash; a <i>top-layer</i> state that doesn't exist until the pass is over. So the pass uses the previous pass's latents, then runs again.</li>
+          <li><b>The loop closes one token per pass.</b> Position 1 needs no latent, so it is exact from pass 1. Its latent makes position 2 exact in pass 2, and so on. Past that wavefront the error is only multiplied by the contraction factor &rho; each pass &mdash; which is why a handful of passes suffices instead of <i>T</i>.</li>
+          <li><b>Inference pays none of it.</b> Decoding is sequential anyway: <i>z</i><sub><i>t</i>&minus;1</sub> is already sitting there when step <i>t</i> starts. The iteration is a training-time cost &mdash; <span id="costnote"></span> &mdash; buying a wide channel that is free at generation time.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>Each block is one full teacher-forced pass over the same sequence; the wire leaving the top-layer row wraps around and re-enters the next pass's inputs, shifted one position. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers, contraction &rho;&nbsp;=&nbsp;0.4) &mdash; residuals stand in for &Vert;z<sup>(k)</sup>&minus;z<sup>(k&minus;1)</sup>&Vert;, they are not measurements. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+
+<script>
+const T=10, L=5, MAXP=4, RHO=0.4;
+const words=["The","cat","sat","on","the","warm","mat","by","the","door"];
+const NS="http://www.w3.org/2000/svg";
+
+// Geometry. Passes stack downward; within a pass, depth runs upward (layer 0 =
+// inputs at the bottom, layer L = latents at the top), matching viz 01. That puts
+// a pass's output row as far as possible from the next pass's input row, which is
+// the point: the return wire has to travel around the outside of the whole block.
+const CW=27, CH=18, COLW=34, ROWH=21, PADL=74, TOP0=78, OFF=2.0;
+const BLOCKH=L*ROWH+CH;
+const PITCH=BLOCKH+70;
+const X=t=>PADL+(t-1)*COLW+(COLW-CW)/2;
+const blockTop=p=>TOP0+(p-1)*PITCH;
+const Y=(p,l)=>blockTop(p)+(L-l)*ROWH;
+const GRIDR=X(T)+CW;
+// Strand t (latent from position t to position t+1) gets its own radius around the
+// block. Radius decreases with t so the strands nest without ever crossing: the
+// strand that lands furthest left runs furthest outside.
+const rad=t=>(T-1-t)*OFF;
+const headerY=(p,t)=>blockTop(p)-11-rad(t);
+const chanX=t=>GRIDR+9+rad(t);
+const busY=(p,t)=>Y(p,0)+CH+12+rad(t);
+const VB_W=chanX(1)+14;
+
+const SUB=L+1;                       // sub-step 0 = inject inputs + latents, 1..L = layer sweep
+let passes=3, step=0, playing=false, timer=null, hover=null;
+const totalSteps=()=>passes*SUB;
+const vbH=()=>blockTop(passes)+BLOCKH+busY(1,1)-Y(1,0)-CH+22;
+const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
+
+// err[p][t]: how far position t's states in pass p still sit from the fixed point.
+// Pass 1 has no feedback at all, so every position past the first starts wrong;
+// after that each pass inherits the previous pass's error from one position back,
+// damped by the contraction factor. Hence the exact prefix growing one token per pass.
+const err={};
+err[1]=Array.from({length:T+1},(_,t)=>t<=1?0:1);
+for(let p=2;p<=MAXP;p++) err[p]=Array.from({length:T+1},(_,t)=>t<=1?0:RHO*err[p-1][t-1]);
+const maxResid=p=>Math.max(...err[p].slice(1));
+const exactThrough=p=>{let n=0;for(let t=1;t<=T;t++){if(err[p][t]>0)break;n=t;}return n;};
+
+function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function txt(parent,s,attrs){const e=el('text',attrs,parent);e.textContent=s;return e}
+// Polyline with quarter-rounded corners - the wrap path turns four times.
+function rpath(pts,r){
+  let d=`M${pts[0][0]},${pts[0][1]}`;
+  for(let i=1;i<pts.length-1;i++){
+    const [px,py]=pts[i-1],[cx,cy]=pts[i],[nx,ny]=pts[i+1];
+    const v1x=cx-px,v1y=cy-py,v2x=nx-cx,v2y=ny-cy;
+    const l1=Math.hypot(v1x,v1y)||1, l2=Math.hypot(v2x,v2y)||1;
+    const rr=Math.min(r,l1/2,l2/2);
+    d+=` L${cx-v1x/l1*rr},${cy-v1y/l1*rr} Q${cx},${cy} ${cx+v2x/l2*rr},${cy+v2y/l2*rr}`;
+  }
+  const last=pts[pts.length-1];
+  return d+` L${last[0]},${last[1]}`;
+}
+function strandPts(p,t){
+  return [
+    [X(t)+CW/2, Y(p,L)],
+    [X(t)+CW/2, headerY(p,t)],
+    [chanX(t),  headerY(p,t)],
+    [chanX(t),  busY(p+1,t)],
+    [X(t+1)+CW/2, busY(p+1,t)],
+    [X(t+1)+CW/2, Y(p+1,0)+CH],
+  ];
+}
+
+const svg=document.getElementById('stage');
+const readout=document.getElementById('readout');
+const tbody=document.getElementById('tbody');
+const tickread=document.getElementById('tickread');
+const playBtn=document.getElementById('play');
+const costnote=document.getElementById('costnote');
+
+function render(){
+  const s=step;
+  svg.setAttribute('viewBox',`0 0 ${VB_W} ${vbH()}`);
+  svg.innerHTML='';
+  const now=s>0?{p:Math.floor((s-1)/SUB)+1,l:(s-1)%SUB}:null;
+
+  // Hovering a latent draws the two columns it ties together, one position apart.
+  if(hover&&hover.kind==='latent'&&hover.p<passes){
+    for(const [t,p] of [[hover.t,hover.p],[hover.t+1,hover.p+1]]){
+      el('line',{x1:X(t)+CW/2,y1:blockTop(p)-2,x2:X(t)+CW/2,y2:Y(p,0)+CH+2,
+        stroke:'var(--yellow)','stroke-width':1,'stroke-opacity':.5,'stroke-dasharray':'2 3'},svg);
+    }
+  }
+
+  for(let t=1;t<=T;t++) txt(svg,words[t-1],{x:X(t)+CW/2,y:18,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});
+  txt(svg,'tokens',{x:PADL-12,y:18,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
+  txt(svg,passes>1?'row L = z, the latent handed back':'row L = z, the latent a vanilla pass throws away',
+    {x:GRIDR,y:blockTop(1)-40,'text-anchor':'end','font-size':10,fill:passes>1?'var(--blue)':'var(--muted)','font-style':'italic'});
+
+  for(let p=1;p<passes;p++) drawBus(p,s);
+  drawZeroTaps(s);
+  for(let p=1;p<=passes;p++) drawBlock(p,s,now);
+
+  tickread.textContent=`${s} / ${totalSteps()}`;
+  playBtn.textContent=playing?'Pause':'Play';
+  drawTable(now);
+  drawReadout(now);
+}
+
+// The return wire: out of the top of the latent row, up over the block, down the
+// right channel past the whole next pass, then back leftward underneath it and up
+// into the input cells - one position to the right of where each latent came from.
+function drawBus(p,s){
+  if(!cellDone(p,L,s)) return;
+  const delivered=s>p*SUB, live=s===p*SUB+1;
+  for(let t=1;t<T;t++){
+    const d=rpath(strandPts(p,t),5.5);
+    const lit=hover&&hover.kind==='latent'&&hover.p===p&&hover.t===t;
+    if(lit) el('path',{d,fill:'none',stroke:'var(--blue)','stroke-width':11,'stroke-opacity':.24,'stroke-linecap':'round'},svg);
+    const strand=el('path',{d,fill:'none',stroke:'var(--blue)','stroke-width':lit?2.4:1.1,
+      'stroke-opacity':lit?1:(live?.75:(delivered?.42:.22)),'stroke-linecap':'round'},svg);
+    if(!delivered&&!live) strand.setAttribute('stroke-dasharray','3 4');
+    if(live){ strand.setAttribute('stroke-dasharray','8 8'); strand.setAttribute('class','flow'); }
+    if(delivered||live){
+      const x=X(t+1)+CW/2, y=Y(p+1,0)+CH;
+      el('path',{d:`M${x-3.4},${y+6} L${x+3.4},${y+6} L${x},${y+.5} Z`,fill:'var(--blue)','fill-opacity':lit?1:.6},svg);
+    }
+    const hit=el('path',{d,fill:'none',stroke:'transparent','stroke-width':9,style:'cursor:pointer','pointer-events':'stroke'},svg);
+    hit.addEventListener('mouseenter',()=>{if(!playing){hover={kind:'latent',p,t};render();}});
+    hit.addEventListener('mouseleave',()=>{if(!playing){hover=null;render();}});
+  }
+  if(p===1){
+    txt(svg,'shifted one position →',{x:X(2)+CW/2-9,y:busY(2,1)+3.5,'text-anchor':'end','font-size':10,fill:'var(--blue)','font-style':'italic'});
+  }
+  // While the handoff is on screen, ring the row being handed back as well as the
+  // row receiving it, so the two ends of the wire read as one event.
+  if(live){
+    el('rect',{x:X(1)-5,y:Y(p,L)-4,width:GRIDR-X(1)+10,height:CH+8,rx:4,fill:'none',
+      stroke:'var(--blue)','stroke-width':1.2,'stroke-dasharray':'4 3','stroke-opacity':.85},svg);
+  }
+}
+
+// Pass 1 has nothing to feed on: its latent inputs are zeros, drawn as stubs so the
+// missing loop is visible rather than merely absent.
+function drawZeroTaps(s){
+  if(!cellDone(1,0,s)) return;
+  const y1=Y(1,0)+CH+15;
+  for(let t=2;t<=T;t++){
+    const x=X(t)+CW/2;
+    el('line',{x1:x,y1:Y(1,0)+CH+3,x2:x,y2:y1,stroke:'var(--line)','stroke-width':1,'stroke-dasharray':'2 3'},svg);
+    txt(svg,'0',{x,y:y1+9,'text-anchor':'middle','font-size':9,fill:'var(--muted)'});
+  }
+  txt(svg,'no latents to feed back yet:',{x:X(2)+CW/2-9,y:y1+9,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-style':'italic'});
+}
+
+function drawBlock(p,s,now){
+  txt(svg,`PASS ${p}`,{x:4,y:blockTop(p)+BLOCKH/2-3,'font-size':10.5,fill:'var(--muted)','letter-spacing':'.08em'});
+  for(let l=0;l<=L;l++){
+    txt(svg,l===0?'in':(l===L?'L':String(l)),
+      {x:PADL-12,y:Y(p,l)+CH/2+3.5,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-style':l===L?'italic':'normal'});
+  }
+  const liveRow=now&&now.p===p?now.l:null;
+  if(liveRow!==null&&cellDone(p,liveRow,s)){
+    el('rect',{x:X(1)-5,y:Y(p,liveRow)-3,width:GRIDR-X(1)+10,height:CH+6,rx:4,
+      fill:'var(--yellow-soft)','fill-opacity':.5,stroke:'var(--yellow)','stroke-width':1.2},svg);
+    el('path',{d:`M${X(1)-13},${Y(p,liveRow)+CH/2-4} L${X(1)-8},${Y(p,liveRow)+CH/2} L${X(1)-13},${Y(p,liveRow)+CH/2+4} Z`,fill:'var(--yellow)'},svg);
+  }
+  // Position 1 never has a latent to wait for - that is the seed of the exact prefix.
+  txt(svg,'∅',{x:X(1)+CW/2,y:Y(p,0)+CH+11,'text-anchor':'middle','font-size':9.5,fill:'var(--muted)'});
+
+  for(let t=1;t<=T;t++)for(let l=0;l<=L;l++){
+    const done=cellDone(p,l,s), e=err[p][t];
+    let fill='none',stroke='var(--line)',sw=1,dash='3 2',fo=1;
+    if(done){
+      dash='';
+      if(e===0){ fill='var(--blue-soft)'; stroke='var(--blue)'; sw=.75; }
+      else{ fill='var(--red)'; fo=.10+.42*e; stroke='var(--red)'; sw=.75; }
+    }
+    const lit=hover&&hover.p===p&&hover.t===t&&(hover.kind==='latent'?l===L:hover.l===l);
+    const dest=hover&&hover.kind==='latent'&&hover.p+1===p&&hover.t+1===t&&l===0;
+    if(lit||dest){ stroke='var(--yellow)'; sw=2; }
+    const g=el('g',{tabindex:l===L?0:-1,style:'cursor:pointer'},svg);
+    el('rect',{x:X(t),y:Y(p,l),width:CW,height:CH,rx:3,fill,'fill-opacity':fo,stroke,'stroke-width':sw,'stroke-dasharray':dash,'pointer-events':'all'},g);
+    const set=()=>{if(!playing){hover={kind:l===L?'latent':'cell',p,t,l};render();}};
+    const clear=()=>{if(!playing){hover=null;render();}};
+    g.addEventListener('mouseenter',set); g.addEventListener('mouseleave',clear);
+    g.addEventListener('focus',set); g.addEventListener('blur',clear);
+  }
+}
+
+function fmt(v){ return v>=1?'1.000':v.toFixed(3); }
+
+function drawTable(now){
+  tbody.innerHTML='';
+  for(let p=1;p<=passes;p++){
+    const tr=document.createElement('tr');
+    if(now&&now.p===p) tr.className='on';
+    const r=maxResid(p);
+    tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`+
+      `<td class="resid"><span class="bar"><i style="width:${(r*100).toFixed(1)}%"></i></span>${fmt(r)}</td>`;
+    tbody.appendChild(tr);
+  }
+  costnote.textContent=`${passes}× the forward work per step here`;
+}
+
+function drawReadout(now){
+  if(hover&&hover.kind==='latent'){
+    const {p,t}=hover;
+    const e=err[p][t];
+    const state=e===0?'already at the fixed point':`still ${fmt(e)} away from the fixed point`;
+    readout.innerHTML=p<passes
+      ? `<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — travels out of the top of the stack, around the block, and into <b>position ${t+1}</b>'s input in pass ${p+1}.`
+      : `<b>z<sub>${t}</sub></b> from the final pass: ${state}. Nothing consumes it here — this is the latent the next training step, and inference, would use.`;
+    return;
+  }
+  if(hover&&hover.kind==='cell'){
+    const {p,t,l}=hover;
+    const e=err[p][t];
+    readout.innerHTML=`Pass ${p} · position ${t} · layer ${l===0?'in':l} — `+
+      (e===0?`<span style="color:var(--blue)">exact</span>: every latent it depends on had converged before this pass began.`
+            :`carrying a residual of ${fmt(e)}, inherited from the stale <i>z</i><sub>${t-1}</sub> it was fed.`);
+    return;
+  }
+  if(!now){ readout.innerHTML=`<span class="dim">Press play. Each pass sweeps layer by layer, then hands its whole latent row back to the start.</span>`; return; }
+  const {p,l}=now;
+  readout.innerHTML=l===0
+    ? `<b>Pass ${p}</b> — inputs land. ${p===1?'There are no latents yet, so every position past the first is fed a zero.':`The latent row from pass ${p-1} arrives, shifted one position: <i>z</i><sub>t−1</sub> joins the input of position <i>t</i>.`}`
+    : `<b>Pass ${p}</b> — layer ${l} fires across all ${T} positions at once. Exact through <i>t</i> ≤ ${exactThrough(p)}.`;
+}
+
+function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
+function dwell(s){ return (s-1)%SUB===0?900:300; }
+function play(){
+  hover=null;
+  if(step>=totalSteps()) step=0;
+  playing=true; render();
+  const tickOnce=()=>{
+    if(step>=totalSteps()){ stop(); return; }
+    step++; render();
+    timer=setTimeout(tickOnce,dwell(step));
+  };
+  timer=setTimeout(tickOnce,260);
+}
+function move(d){ hover=null; step=Math.max(0,Math.min(totalSteps(),step+d)); render(); }
+
+const passpick=document.getElementById('passpick');
+for(let k=1;k<=MAXP;k++){
+  const b=document.createElement('button');
+  b.className='btn'; b.textContent=k; b.setAttribute('aria-pressed',String(k===passes));
+  b.setAttribute('aria-label',`${k} training pass${k>1?'es':''}`);
+  b.addEventListener('click',()=>{
+    stop(); passes=k; step=Math.min(step,totalSteps()); hover=null;
+    [...passpick.querySelectorAll('button')].forEach((o,i)=>o.setAttribute('aria-pressed',String(i+1===k)));
+    render();
+  });
+  passpick.appendChild(b);
+}
+
+document.getElementById('back').addEventListener('click',()=>{stop();move(-1)});
+document.getElementById('fwd').addEventListener('click',()=>{stop();move(1)});
+document.getElementById('reset').addEventListener('click',()=>{stop();step=0;hover=null;render()});
+playBtn.addEventListener('click',()=>playing?stop():play());
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&e.target.tagName!=='BUTTON'){e.preventDefault();playing?stop():play();}
+  if(e.key==='ArrowRight'){stop();move(1);}
+  if(e.key==='ArrowLeft'){stop();move(-1);}
+});
+
+render();
+</script>
+</body>
+</html>

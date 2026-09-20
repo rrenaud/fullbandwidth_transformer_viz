@@ -45,10 +45,34 @@ which it reads directly (solid blue), and which are already sitting there
 computed but architecturally out of reach (red), with a live count of how much
 reachable information is going unused right now.
 
+### 02 — Closing the loop
+
+Full-bandwidth *training*, unrolled. Teacher forcing runs every position at once, but
+position `t` wants `z[t-1]`, the previous position's **top-layer** latent — which does
+not exist until the pass is over. So each pass is run against the *previous* pass's
+latents, and the pass is run again: the wire leaving the latent row travels out of the
+top of the stack, around the whole block, and back into the next pass's inputs, shifted
+one position.
+
+Three things fall out of that, and the page animates all three:
+
+- **The loop closes one token per pass.** Position 1 needs no latent, so it is exact
+  from pass 1; its latent makes position 2 exact in pass 2, and so on. The exact prefix
+  advances one token per pass — a visible staircase down the stack.
+- **Past that wavefront the error only contracts**, by a factor ρ per pass, which is why
+  a handful of passes stands in for the `T` it would take to converge exactly.
+- **Inference pays none of it.** Decoding is already sequential, so `z[t-1]` is sitting
+  there when step `t` starts. The iteration is a training-time cost — `k`× the forward
+  work — buying a channel that is free at generation time.
+
+Hover or tab any top-row cell to follow one latent around the loop into the position it
+lands in; the pass selector trades passes against the residual left on the table (at one
+pass, the feedback path is gone and the page shows the vanilla model it degenerates to).
+
 ## Roadmap ideas
 
 - Animate real attention patterns / KV-cache growth alongside the depth axis.
 - A version driven by activations from an actual small model checkpoint instead of
   illustrative placeholder values.
-- A piece on the multi-pass training regime the paper uses to make the learned
-  feedback map contract toward a fixed point (their Figure 3 instability story).
+- The instability story from the paper's Figure 3: what the residual curve looks like
+  when the learned feedback map does *not* contract.
