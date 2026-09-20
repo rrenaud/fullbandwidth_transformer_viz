@@ -181,7 +181,7 @@ footer a{color:inherit}
           <li><b>One pass can't see its own latents.</b> Teacher forcing runs every position at once, but position <i>t</i> wants <i>z</i><sub><i>t</i>&minus;1</sub> &mdash; a <i>top-layer</i> state that doesn't exist until the pass is over. So the pass uses the previous pass's latents, then runs again.</li>
           <li><b>The loop closes one token per pass.</b> Position 1 needs no latent, so it is exact from pass 1. Its latent makes position 2 exact in pass 2, and so on. Past that wavefront the error is only multiplied by the contraction factor &rho; each pass &mdash; which is why a handful of passes suffices instead of <i>T</i>.</li>
           <li><b>Inference pays none of it.</b> Decoding is sequential anyway: <i>z</i><sub><i>t</i>&minus;1</sub> is already sitting there when step <i>t</i> starts. The iteration is a training-time cost &mdash; <span id="costnote"></span> &mdash; buying a wide channel that is free at generation time.</li>
-          <li><b>Only the last pass is scored.</b> Its top row goes through the unembedding and is compared with the next token: <i>L</i> = &Sigma;<sub><i>t</i></sub> CE(<i>W</i><sub>o</sub><i>h</i><sup>(3)</sup>[<i>t</i>,&#8467;<sub>L</sub>], <i>x</i><sub><i>t</i>+1</sub>). Passes 1 and 2 exist only to make the latents that pass 3 consumes. The usual choice is to stop the gradient at each handoff, so only the final pass is backpropagated &mdash; which is what makes the extra passes cost forward work rather than whole training steps. (Scoring every pass is the other option; the single loss is what's drawn.)</li>
+          <li><b>Every pass is scored.</b> Each pass's top row goes through the unembedding and is compared with the next token &mdash; <i>L<sub>k</sub></i> = &Sigma;<sub><i>t</i></sub> CE(<i>W</i><sub>o</sub><i>h</i><sup>(<i>k</i>)</sup>[<i>t</i>,&#8467;<sub>L</sub>], <i>x</i><sub><i>t</i>+1</sub>) &mdash; and the three are summed. So the model is trained across the whole range of latent quality it will ever be handed: pass 1 with no feedback at all, pass 2 with stale latents, pass 3 with nearly converged ones. The latents are usually detached at each handoff, so a pass is backpropagated through its own forward and no further.</li>
         </ul>
       </div>
     </aside>
@@ -200,8 +200,8 @@ const NS="http://www.w3.org/2000/svg";
 // inputs at the bottom, layer L = latents at the top), matching viz 01. That puts
 // a pass's output row as far as possible from the next pass's input row, which is
 // the point: the return wire has to travel around the outside of the whole block.
-const CW=27, CH=18, COLW=34, ROWH=21, PADL=74, TOP0=62, GAP=58;
-const TARGY=34;                      // baseline of the target-token row above the final pass
+const CW=27, CH=18, COLW=34, ROWH=21, PADL=74, TOP0=76, GAP=58;
+const TARGY=48;                      // baseline of the target-token row at the head
 const BLOCKH=L*ROWH+CH;
 const PITCH=BLOCKH+GAP;
 const X=t=>PADL+(t-1)*COLW+(COLW-CW)/2;
@@ -212,7 +212,7 @@ const X=t=>PADL+(t-1)*COLW+(COLW-CW)/2;
 const blockTop=p=>TOP0+(PASSES-p)*PITCH;
 const Y=(p,l)=>blockTop(p)+(L-l)*ROWH;
 const GRIDR=X(T)+CW;
-const VB_W=GRIDR+14;
+const VB_W=GRIDR+26;
 
 const SUB=L+1;                       // sub-step 0 = inject inputs + latents, 1..L = layer sweep
 let step=0, playing=false, timer=null, hover=null;
@@ -239,7 +239,7 @@ const wire=t=>`var(--w${t})`;
 // t+1 in the pass above. Every hop is the same curve translated one column right, so
 // the whole ribbon reads as a single shear and no two strands cross.
 function curve(p,t){
-  const x1=X(t)+CW/2, y1=Y(p,L), x2=X(t+1)+CW/2, y2=Y(p+1,0)+CH, k=(y1-y2)*.45;
+  const x1=X(t)+CW-7, y1=Y(p,L), x2=X(t+1)+CW/2, y2=Y(p+1,0)+CH, k=(y1-y2)*.45;
   return `M${x1},${y1} C${x1},${y1-k} ${x2},${y2+k} ${x2},${y2}`;
 }
 
@@ -329,22 +329,32 @@ function drawZeroTaps(s){
   txt(svg,'no latents to feed back yet:',{x:X(2)+CW/2-9,y:y1+9,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-style':'italic'});
 }
 
-// Where the final pass's latents actually go. Every other latent row hands itself
-// up to the pass above; this one is unembedded and scored, and it is the only row
-// in the figure with a loss attached.
+// Every pass's top row is unembedded and scored against the same targets, so every
+// latent row carries a tick out of the top - a pass hands its latents up AND takes a
+// loss. Only the head of the figure has room to spell out the targets those ticks are
+// scored against; the L-tags say the other passes are scored against the same ones.
 function drawLoss(s){
-  if(!cellDone(PASSES,L,s)) return;
-  const top=blockTop(PASSES);
-  for(let t=1;t<=T;t++){
-    const x=X(t)+CW/2;
-    el('line',{x1:x,y1:top-3,x2:x,y2:TARGY+11,stroke:'var(--muted)','stroke-width':1,'stroke-opacity':.7},svg);
-    el('path',{d:`M${x-3.2},${TARGY+12} L${x+3.2},${TARGY+12} L${x},${TARGY+5} Z`,fill:'var(--muted)'},svg);
-    txt(svg,targets[t-1],{x,y:TARGY,'text-anchor':'middle','font-size':10.5,fill:'var(--ink)'});
+  for(let p=1;p<=PASSES;p++){
+    if(!cellDone(p,L,s)) continue;
+    const top=blockTop(p), head=p===PASSES;
+    const tip=head?TARGY+11:top-17, base=tip+7;
+    for(let t=1;t<=T;t++){
+      const x=X(t)+CW/2;
+      el('line',{x1:x,y1:top-4,x2:x,y2:base,stroke:'var(--muted)','stroke-width':1,'stroke-opacity':.7},svg);
+      el('path',{d:`M${x-3.2},${base} L${x+3.2},${base} L${x},${tip} Z`,fill:'var(--muted)'},svg);
+    }
+    const tag=el('text',{x:GRIDR+7,y:top+CH/2+3,'font-size':11.5,fill:'var(--muted)','font-style':'italic'},svg);
+    tag.textContent='L';
+    const sub=el('tspan',{dy:3,'font-size':8},tag); sub.textContent=String(p);
   }
+  if(!cellDone(PASSES,L,s)) return;
+  for(let t=1;t<=T;t++) txt(svg,targets[t-1],{x:X(t)+CW/2,y:TARGY,'text-anchor':'middle','font-size':10.5,fill:'var(--ink)'});
   txt(svg,'targets',{x:PADL-12,y:TARGY,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
   el('path',{d:`M${X(1)},${TARGY-16} v-4 H${GRIDR} v4`,fill:'none',stroke:'var(--line)','stroke-width':1},svg);
-  txt(svg,'\u03A3 cross-entropy against the next token \u2014 scored on this pass only',
+  txt(svg,'\u03A3 cross-entropy against the next token \u2014 every pass is scored, against these same targets',
     {x:(X(1)+GRIDR)/2,y:TARGY-25,'text-anchor':'middle','font-size':10,fill:'var(--muted)','font-style':'italic'},svg);
+  txt(svg,'training loss = L\u2081 + L\u2082 + L\u2083',
+    {x:(X(1)+GRIDR)/2,y:TARGY-37,'text-anchor':'middle','font-size':10.5,fill:'var(--ink)','font-style':'italic'},svg);
 }
 
 function drawBlock(p,s,now){
@@ -399,7 +409,9 @@ function drawTable(now){
     tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`;
     tbody.appendChild(tr);
   }
-  costnote.textContent=`${PASSES}× the forward work per step here`;
+  // Every pass carries a loss, so every pass is backpropagated: the extra passes cost
+  // whole training steps, not just forward passes.
+  costnote.textContent=`${PASSES}× the work of an ordinary training step here`;
 }
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }

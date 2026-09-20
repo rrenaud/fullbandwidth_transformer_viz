@@ -66,15 +66,17 @@ Three things fall out of that, and the page animates all three:
   and an invented rate printed to three decimals reads as a measurement.
 - **Inference pays none of it.** Decoding is already sequential, so `z[t-1]` is sitting
   there when step `t` starts. The iteration is a training-time cost — `k`× the forward
-  work — buying a channel that is free at generation time.
-- **Only the last pass is scored.** Its top row is unembedded and compared against the
-  next token; passes 1 and 2 exist only to produce the latents pass 3 consumes. Stop the
-  gradient at each handoff and only the final pass is backpropagated, which is what makes
-  the extra passes cost forward work rather than whole training steps.
+  work of an ordinary training step — buying a channel that is free at generation time.
+- **Every pass is scored.** Each pass's top row is unembedded and compared against the
+  same targets, and the losses are summed — so the model is trained across the whole
+  range of latent quality it will ever be handed, from no feedback at all in pass 1 to
+  nearly converged in pass 3. The latents are usually detached at each handoff, so a
+  pass is backpropagated through its own forward and no further.
 
 Two things the diagram used to leave implicit are now drawn. The sequence enters at the
-foot and the targets leave at the head, with the loss bracketed across the final pass's
-top row — so that row is no longer a dead end. And each wire lands on a ⊕ rather than an
+foot and the targets leave at the head; every latent row carries a tick up into the loss,
+so a pass both hands its latents on *and* gets scored, and the head of the figure spells
+out the targets all three are scored against. And each wire lands on a ⊕ rather than an
 arrowhead, with a side inset opening up one input cell: the latent is *fused into* the
 token embedding through a gated linear unit rather than replacing it, which is also why
 a zero latent (pass 1) leaves the vanilla input untouched.
