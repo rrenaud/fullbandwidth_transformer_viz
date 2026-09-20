@@ -143,7 +143,7 @@ footer a{color:inherit}
 
 <main>
   <div class="layout">
-    <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked top to bottom; each pass hands its top-layer latents back to the next pass's inputs, shifted one position"></svg></section>
+    <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked bottom to top; each pass hands its top-layer latents up into the next pass's inputs, shifted one position"></svg></section>
     <aside class="side">
       <div>
         <h2>Right now</h2>
@@ -168,7 +168,7 @@ footer a{color:inherit}
   </div>
 </main>
 
-<footer>Each block is one full teacher-forced pass over the same sequence; the wire leaving the top-layer row wraps around and re-enters the next pass's inputs, shifted one position. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers, contraction &rho;&nbsp;=&nbsp;0.4) &mdash; residuals stand in for &Vert;z<sup>(k)</sup>&minus;z<sup>(k&minus;1)</sup>&Vert;, they are not measurements. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers, contraction &rho;&nbsp;=&nbsp;0.4) &mdash; residuals stand in for &Vert;z<sup>(k)</sup>&minus;z<sup>(k&minus;1)</sup>&Vert;, they are not measurements. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, MAXP=4, RHO=0.4;
@@ -179,26 +179,23 @@ const NS="http://www.w3.org/2000/svg";
 // inputs at the bottom, layer L = latents at the top), matching viz 01. That puts
 // a pass's output row as far as possible from the next pass's input row, which is
 // the point: the return wire has to travel around the outside of the whole block.
-const CW=27, CH=18, COLW=34, ROWH=21, PADL=74, TOP0=78, OFF=2.0;
+const CW=27, CH=18, COLW=34, ROWH=21, PADL=74, TOP0=46, GAP=58;
 const BLOCKH=L*ROWH+CH;
-const PITCH=BLOCKH+70;
+const PITCH=BLOCKH+GAP;
 const X=t=>PADL+(t-1)*COLW+(COLW-CW)/2;
-const blockTop=p=>TOP0+(p-1)*PITCH;
+// Pass 1 sits at the BOTTOM and the iteration climbs. Depth still runs upward
+// inside a pass, so a pass's latent row (the top of its block) ends up directly
+// beneath the next pass's input row (the bottom of the block above it): the handoff
+// is one short step up and one column right, with nothing to route around.
+const blockTop=p=>TOP0+(passes-p)*PITCH;
 const Y=(p,l)=>blockTop(p)+(L-l)*ROWH;
 const GRIDR=X(T)+CW;
-// Strand t (latent from position t to position t+1) gets its own radius around the
-// block. Radius decreases with t so the strands nest without ever crossing: the
-// strand that lands furthest left runs furthest outside.
-const rad=t=>(T-1-t)*OFF;
-const headerY=(p,t)=>blockTop(p)-11-rad(t);
-const chanX=t=>GRIDR+9+rad(t);
-const busY=(p,t)=>Y(p,0)+CH+12+rad(t);
-const VB_W=chanX(1)+14;
+const VB_W=GRIDR+14;
 
 const SUB=L+1;                       // sub-step 0 = inject inputs + latents, 1..L = layer sweep
 let passes=3, step=0, playing=false, timer=null, hover=null;
 const totalSteps=()=>passes*SUB;
-const vbH=()=>blockTop(passes)+BLOCKH+busY(1,1)-Y(1,0)-CH+22;
+const vbH=()=>Y(1,0)+CH+36;
 const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
 
 // err[p][t]: how far position t's states in pass p still sit from the fixed point.
@@ -213,29 +210,13 @@ const exactThrough=p=>{let n=0;for(let t=1;t<=T;t++){if(err[p][t]>0)break;n=t;}r
 
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
 function txt(parent,s,attrs){const e=el('text',attrs,parent);e.textContent=s;return e}
-// Polyline with quarter-rounded corners - the wrap path turns four times.
-function rpath(pts,r){
-  let d=`M${pts[0][0]},${pts[0][1]}`;
-  for(let i=1;i<pts.length-1;i++){
-    const [px,py]=pts[i-1],[cx,cy]=pts[i],[nx,ny]=pts[i+1];
-    const v1x=cx-px,v1y=cy-py,v2x=nx-cx,v2y=ny-cy;
-    const l1=Math.hypot(v1x,v1y)||1, l2=Math.hypot(v2x,v2y)||1;
-    const rr=Math.min(r,l1/2,l2/2);
-    d+=` L${cx-v1x/l1*rr},${cy-v1y/l1*rr} Q${cx},${cy} ${cx+v2x/l2*rr},${cy+v2y/l2*rr}`;
-  }
-  const last=pts[pts.length-1];
-  return d+` L${last[0]},${last[1]}`;
-}
 const wire=t=>`var(--w${t})`;
-function strandPts(p,t){
-  return [
-    [X(t)+CW/2, Y(p,L)],
-    [X(t)+CW/2, headerY(p,t)],
-    [chanX(t),  headerY(p,t)],
-    [chanX(t),  busY(p+1,t)],
-    [X(t+1)+CW/2, busY(p+1,t)],
-    [X(t+1)+CW/2, Y(p+1,0)+CH],
-  ];
+// Out of the top of latent cell t, up across the gap, into the bottom of input cell
+// t+1 in the pass above. Every hop is the same curve translated one column right, so
+// the whole ribbon reads as a single shear and no two strands cross.
+function curve(p,t){
+  const x1=X(t)+CW/2, y1=Y(p,L), x2=X(t+1)+CW/2, y2=Y(p+1,0)+CH, k=(y1-y2)*.45;
+  return `M${x1},${y1} C${x1},${y1-k} ${x2},${y2+k} ${x2},${y2}`;
 }
 
 const svg=document.getElementById('stage');
@@ -261,8 +242,8 @@ function render(){
 
   for(let t=1;t<=T;t++) txt(svg,words[t-1],{x:X(t)+CW/2,y:18,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});
   txt(svg,'tokens',{x:PADL-12,y:18,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
-  txt(svg,passes>1?'row L = z, the latent handed back':'row L = z, the latent a vanilla pass throws away',
-    {x:GRIDR,y:blockTop(1)-40,'text-anchor':'end','font-size':10,fill:passes>1?'var(--blue)':'var(--muted)','font-style':'italic'});
+  txt(svg,passes>1?'row L = z, the latent handed up to the next pass':'row L = z, the latent a vanilla pass throws away',
+    {x:GRIDR,y:blockTop(passes)-12,'text-anchor':'end','font-size':10,fill:passes>1?'var(--blue)':'var(--muted)','font-style':'italic'});
 
   for(let p=1;p<passes;p++) drawBus(p,s);
   drawZeroTaps(s);
@@ -281,7 +262,7 @@ function drawBus(p,s){
   if(!cellDone(p,L,s)) return;
   const delivered=s>p*SUB, live=s===p*SUB+1;
   for(let t=1;t<T;t++){
-    const d=rpath(strandPts(p,t),5.5);
+    const d=curve(p,t);
     const lit=hover&&hover.kind==='latent'&&hover.p===p&&hover.t===t;
     const c=wire(t);
     if(lit) el('path',{d,fill:'none',stroke:c,'stroke-width':11,'stroke-opacity':.22,'stroke-linecap':'round'},svg);
@@ -298,7 +279,7 @@ function drawBus(p,s){
     hit.addEventListener('mouseleave',()=>{if(!playing){hover=null;render();}});
   }
   if(p===1){
-    txt(svg,'one position right →',{x:X(2)+CW/2-9,y:busY(2,1)+3.5,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
+    txt(svg,'one position right →',{x:X(1)+CW/2-8,y:(Y(p,L)+Y(p+1,0)+CH)/2+3,'text-anchor':'end','font-size':9,fill:'var(--muted)','font-style':'italic'});
   }
   // While the handoff is on screen, ring the row being handed back as well as the
   // row receiving it, so the two ends of the wire read as one event.
@@ -387,7 +368,7 @@ function drawReadout(now){
     const state=e===0?'already at the fixed point':`still ${fmt(e)} away from the fixed point`;
     const dot=p<passes?`<span style="color:${wire(t)}">\u25CF</span> `:'';
     readout.innerHTML=p<passes
-      ? `${dot}<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — travels out of the top of the stack, around the block, and into <b>position ${t+1}</b>'s input in pass ${p+1}.`
+      ? `${dot}<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — steps up into <b>position ${t+1}</b>'s input in pass ${p+1}, one column to the right of where it left.`
       : `<b>z<sub>${t}</sub></b> from the final pass: ${state}. Nothing consumes it here — this is the latent the next training step, and inference, would use.`;
     return;
   }

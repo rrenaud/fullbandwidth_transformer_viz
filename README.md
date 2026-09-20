@@ -50,15 +50,15 @@ reachable information is going unused right now.
 Full-bandwidth *training*, unrolled. Teacher forcing runs every position at once, but
 position `t` wants `z[t-1]`, the previous position's **top-layer** latent — which does
 not exist until the pass is over. So each pass is run against the *previous* pass's
-latents, and the pass is run again: the wire leaving the latent row travels out of the
-top of the stack, around the whole block, and back into the next pass's inputs, shifted
-one position.
+latents, and the pass is run again. The passes climb the figure — **pass 1 is at the
+foot** — so a pass's latent row sits directly beneath the next pass's input row, and the
+handoff is one short step up and one column to the right, with nothing to route around.
 
 Three things fall out of that, and the page animates all three:
 
 - **The loop closes one token per pass.** Position 1 needs no latent, so it is exact
   from pass 1; its latent makes position 2 exact in pass 2, and so on. The exact prefix
-  advances one token per pass — a visible staircase down the stack.
+  advances one token per pass — a visible staircase up the stack.
 - **Past that wavefront the error only contracts**, by a factor ρ per pass, which is why
   a handful of passes stands in for the `T` it would take to converge exactly.
 - **Inference pays none of it.** Decoding is already sequential, so `z[t-1]` is sitting
