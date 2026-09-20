@@ -134,7 +134,7 @@ footer a{color:inherit}
       <span><i class="sw" style="background:var(--blue-soft);border-color:var(--blue)"></i>exact</span>
       <span><i class="sw" style="background:var(--red);border-color:var(--red);opacity:.52"></i>stale latent</span>
       <span><i class="sw" style="border-style:dashed"></i>pending</span>
-      <span><b class="oplus">&oplus;</b>z fused into the token embedding</span>
+      <span><b class="oplus">&otimes;</b>h gated by the token embedding</span>
     </div>
   </div>
 </div>
@@ -149,46 +149,51 @@ footer a{color:inherit}
           <thead><tr><th>Pass</th><th>Exact&nbsp;through</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
+        <p class="caption">Follows from the update rule: position 1 is fed plain <i>e</i><sub>1</sub> in every pass, so it is right immediately, and each pass pins one more. The paper does not frame it this way &mdash; it presents the multi-pass scheme as an approximation, not as exact on a growing prefix.</p>
       </div>
       <div>
         <h2>Inside one input cell</h2>
-        <svg class="inset" viewBox="0 0 300 150" role="img"
-             aria-label="The token embedding and the gated previous latent are summed to form the input state">
-          <rect x="108" y="6" width="84" height="25" rx="3" fill="var(--blue-soft)" stroke="var(--blue)"/>
-          <text x="150" y="23" text-anchor="middle" font-size="12" fill="var(--ink)"><tspan font-style="italic">h</tspan>[t, in]</text>
-          <line x1="150" y1="58" x2="150" y2="35" stroke="var(--muted)" stroke-width="1.2"/>
+        <svg class="inset" viewBox="0 0 300 152" role="img"
+             aria-label="The previous latent supplies the value and the token embedding supplies the gate; their product is the input state">
+          <rect x="88" y="6" width="124" height="25" rx="3" fill="var(--blue-soft)" stroke="var(--blue)"/>
+          <text x="150" y="23" text-anchor="middle" font-size="12" fill="var(--ink)"><tspan font-style="italic">e</tspan><tspan font-size="8.5" dy="3">t</tspan><tspan dy="-3"> &#8855; </tspan><tspan font-style="italic">h</tspan><tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
+          <line x1="150" y1="57" x2="150" y2="35" stroke="var(--muted)" stroke-width="1.2"/>
           <path d="M146.6,36 L153.4,36 L150,30 Z" fill="var(--muted)"/>
           <circle cx="150" cy="66" r="8" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-          <path d="M145.8,66 H154.2 M150,61.8 V70.2" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round"/>
-          <path d="M51,110 V66 H142" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
-          <path d="M249,110 V95" fill="none" stroke="var(--w4)" stroke-width="1.4"/>
-          <path d="M249,72 V66 H158" fill="none" stroke="var(--w4)" stroke-width="1.4"/>
-          <rect x="212" y="72" width="74" height="23" rx="11.5" fill="none" stroke="var(--w4)" stroke-dasharray="3 2"/>
-          <text x="249" y="88" text-anchor="middle" font-size="11" fill="var(--w4)">&#963; gate</text>
+          <path d="M147,63 L153,69 M153,63 L147,69" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M51,110 V95 M51,72 V66 H142" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+          <rect x="14" y="72" width="74" height="23" rx="11.5" fill="none" stroke="var(--muted)" stroke-dasharray="3 2"/>
+          <text x="51" y="88" text-anchor="middle" font-size="11" fill="var(--muted)">&#963;(<tspan font-style="italic">W</tspan><tspan font-size="8" dy="-3">G</tspan><tspan dy="3" font-style="italic">e</tspan><tspan font-size="8" dy="3">t</tspan><tspan dy="-3">)</tspan></text>
+          <text x="119" y="60" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-style="italic">gate</text>
+          <path d="M249,110 V95 M249,72 V66 H158" fill="none" stroke="var(--w4)" stroke-width="1.4"/>
+          <rect x="212" y="72" width="74" height="23" rx="3" fill="none" stroke="var(--w4)"/>
+          <text x="249" y="88" text-anchor="middle" font-size="11" fill="var(--w4)"><tspan font-style="italic">W</tspan><tspan font-size="8" dy="-3">U</tspan><tspan dy="3" font-style="italic">h</tspan><tspan font-size="8" dy="3">t&#8722;1</tspan></text>
+          <text x="181" y="60" text-anchor="middle" font-size="9.5" fill="var(--w4)" font-style="italic">value</text>
           <rect x="8" y="110" width="86" height="25" rx="3" fill="none" stroke="var(--line)"/>
           <text x="51" y="127" text-anchor="middle" font-size="12" fill="var(--ink)" font-style="italic">e<tspan font-size="8.5" dy="3">t</tspan></text>
-          <text x="51" y="147" text-anchor="middle" font-size="10" fill="var(--muted)">token embedding</text>
+          <text x="51" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">token embedding</text>
           <rect x="206" y="110" width="86" height="25" rx="3" fill="none" stroke="var(--w4)"/>
-          <text x="249" y="127" text-anchor="middle" font-size="12" fill="var(--w4)" font-style="italic">z<tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
-          <text x="249" y="147" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
+          <text x="249" y="127" text-anchor="middle" font-size="12" fill="var(--w4)" font-style="italic">h<tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
+          <text x="249" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
         </svg>
-        <p class="formula"><i>h</i>[t,&nbsp;in] = <i>e<sub>t</sub></i> + (<i>W<sub>v</sub>z</i><sub><i>t</i>&minus;1</sub>) &odot; &sigma;(<i>W<sub>g</sub>z</i><sub><i>t</i>&minus;1</sub>)</p>
-        <p class="caption">A gated linear unit, so the latent is fused into the embedding rather than replacing it &mdash; and a zero latent (pass 1) leaves the vanilla input untouched. Schematic: the gate could read the embedding too.</p>
+        <p class="formula"><i>e<sub>t</sub></i> &otimes; <i>h</i><sub><i>t</i>&minus;1</sub> = <i>W</i><sup>U</sup><i>h</i><sub><i>t</i>&minus;1</sub> &odot; &sigma;(<i>W</i><sup>G</sup><i>e<sub>t</sub></i>)</p>
+        <p class="caption">Note which way round it is: the latent is the <i>value</i>, and the token embedding enters only as a multiplicative gate. It is a product, not a sum &mdash; which is also why pass 1 is run as the plain single-pass objective on <i>e</i><sub>1:<i>t</i></sub> rather than by feeding a zero latent through the gate, since that would zero the input outright.</p>
       </div>
       <div>
         <h2>Why the loop needs unrolling</h2>
         <ul class="notes">
-          <li><b>One pass can't see its own latents.</b> Teacher forcing runs every position at once, but position <i>t</i> wants <i>z</i><sub><i>t</i>&minus;1</sub> &mdash; a <i>top-layer</i> state that doesn't exist until the pass is over. So the pass uses the previous pass's latents, then runs again.</li>
-          <li><b>The loop closes one token per pass.</b> Position 1 needs no latent, so it is exact from pass 1. Its latent makes position 2 exact in pass 2, and so on. Past that wavefront the error is only multiplied by the contraction factor &rho; each pass &mdash; which is why a handful of passes suffices instead of <i>T</i>.</li>
-          <li><b>Inference pays none of it.</b> Decoding is sequential anyway: <i>z</i><sub><i>t</i>&minus;1</sub> is already sitting there when step <i>t</i> starts. The iteration is a training-time cost &mdash; <span id="costnote"></span> &mdash; buying a wide channel that is free at generation time.</li>
-          <li><b>Every pass is scored.</b> Each pass's top row goes through the unembedding and is compared with the next token &mdash; <i>L<sub>k</sub></i> = &Sigma;<sub><i>t</i></sub> CE(<i>W</i><sub>o</sub><i>h</i><sup>(<i>k</i>)</sup>[<i>t</i>,&#8467;<sub>L</sub>], <i>x</i><sub><i>t</i>+1</sub>) &mdash; and the three are summed. So the model is trained across the whole range of latent quality it will ever be handed: pass 1 with no feedback at all, pass 2 with stale latents, pass 3 with nearly converged ones. The latents are usually detached at each handoff, so a pass is backpropagated through its own forward and no further.</li>
+          <li><b>One pass can't see its own latents.</b> Teacher forcing runs every position at once, but position <i>t</i> wants <i>h</i><sub><i>t</i>&minus;1</sub> &mdash; a <i>top-layer</i> state that doesn't exist until the pass is over. So the pass uses the previous pass's latents, then runs again.</li>
+          <li><b>The loop closes one token per pass.</b> Position 1 needs no latent, so it is exact from pass 1. Its latent makes position 2 exact in pass 2, and so on. Past that wavefront the error only shrinks, pass by pass &mdash; which is why a handful of passes stands in for the <i>T</i> it would take to converge outright. The paper reports the learned feedback map behaving &ldquo;like a contraction toward a fixed point&rdquo;, stable well beyond the depths seen in training.</li>
+          <li><b>Inference pays none of it.</b> Decoding is sequential anyway: <i>h</i><sub><i>t</i>&minus;1</sub> is already sitting there when step <i>t</i> starts, which is what buys the paper's &ldquo;negligible per-token decoding overhead&rdquo;. The iteration is a training-time cost: a <i>k</i>-pass batch runs at roughly <i>k</i>&times; the compute of ordinary teacher forcing. But the passes are scheduled rather than always on &mdash; the paper's runs are 75% single-pass, 22% two-pass, 3% three-pass, introduced midway through training &mdash; so the average overhead is nearer 1.3&times;. The three-pass batch drawn here is the rare one.</li>
+          <li><b>Every pass is scored.</b> &ldquo;We then apply the standard teacher-forced next-token-prediction loss to the outputs of every pass.&rdquo; The first term is the ordinary single-pass objective on plain embeddings; the feedback passes are averaged and weighted by &lambda; (1 by default), giving <i>L</i><sub>1</sub> + &lambda;(<i>L</i><sub>2</sub> + <i>L</i><sub>3</sub>)/2 at three passes. So the model is trained across the whole range of latent quality it will be handed: no feedback at all in pass 1, stale latents in pass 2, nearly converged ones in pass 3.</li>
+          <li><b>Nothing is detached.</b> &ldquo;We do not detach the gradient, so the loss from later passes backpropagates into earlier passes' latent states, acting as an auxiliary objective.&rdquo; The backward pass therefore runs the whole height of the figure &mdash; down every layer of pass 3, back across the handoff into pass 2's latents, down again, and out the bottom. It is one graph, not three. The paper notes this &ldquo;does increase the memory footprint.&rdquo;</li>
         </ul>
       </div>
     </aside>
   </div>
 </main>
 
-<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row &mdash; carrying that row's latents, <i>z</i><sub>1</sub>&hellip;<i>z</i><sub>9</sub> &mdash; enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row &mdash; carrying that row's latents, <i>h</i><sub>1</sub>&hellip;<i>h</i><sub>9</sub> &mdash; enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>h</i><sub>4</sub> and the <i>h</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, PASSES=3, RHO=0.4;
@@ -247,7 +252,6 @@ const svg=document.getElementById('stage');
 const tbody=document.getElementById('tbody');
 const tickread=document.getElementById('tickread');
 const playBtn=document.getElementById('play');
-const costnote=document.getElementById('costnote');
 
 function render(){
   const s=step;
@@ -295,11 +299,12 @@ function drawBus(p,s){
     if(!delivered&&!live) strand.setAttribute('stroke-dasharray','3 4');
     if(live){ strand.setAttribute('stroke-dasharray','8 8'); strand.setAttribute('class','flow'); }
     if(delivered||live){
-      // The latent does not replace the input, it is fused into it - so the wire ends
-      // on a sum node just below the cell rather than a bare arrowhead.
-      const x=X(t+1)+CW/2, y=Y(p+1,0)+CH+4.4;
+      // The latent does not replace the input, it is gated by it - so the wire ends on
+      // the paper's (x) node just below the cell rather than a bare arrowhead.
+      const x=X(t+1)+CW/2, y=Y(p+1,0)+CH+4.4;   // e_t (x) h_{t-1}: a product, not a sum
       el('circle',{cx:x,cy:y,r:4.2,fill:'var(--bg)',stroke:c,'stroke-width':lit?1.8:1.3},svg);
-      el('path',{d:`M${x-2.1},${y} H${x+2.1} M${x},${y-2.1} V${y+2.1}`,stroke:c,'stroke-width':1.2,'stroke-linecap':'round'},svg);
+      el('path',{d:`M${x-1.9},${y-1.9} L${x+1.9},${y+1.9} M${x+1.9},${y-1.9} L${x-1.9},${y+1.9}`,
+        stroke:c,'stroke-width':1.2,'stroke-linecap':'round'},svg);
     }
     const hit=el('path',{d,fill:'none',stroke:'transparent','stroke-width':9,style:'cursor:pointer','pointer-events':'stroke'},svg);
     hit.addEventListener('mouseenter',()=>{if(!playing){hover={kind:'latent',p,t};render();}});
@@ -320,13 +325,16 @@ function drawBus(p,s){
 // missing loop is visible rather than merely absent.
 function drawZeroTaps(s){
   if(!cellDone(1,0,s)) return;
-  const y1=Y(1,0)+CH+15;
+  // Pass 1 is the paper's plain single-pass term: the inputs are the bare embeddings
+  // e_1:t, with no latent and so no gate at all - not a zero fed through one, which
+  // the product form would collapse to zero anyway.
+  const y1=Y(1,0)+CH+14;
   for(let t=2;t<=T;t++){
     const x=X(t)+CW/2;
     el('line',{x1:x,y1:Y(1,0)+CH+3,x2:x,y2:y1,stroke:'var(--line)','stroke-width':1,'stroke-dasharray':'2 3'},svg);
-    txt(svg,'0',{x,y:y1+9,'text-anchor':'middle','font-size':9,fill:'var(--muted)'});
   }
-  txt(svg,'no latents to feed back yet:',{x:X(2)+CW/2-9,y:y1+9,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-style':'italic'});
+  txt(svg,'pass 1 runs on the plain embeddings e\u209C \u2014 nothing to gate with yet',
+    {x:(X(1)+GRIDR)/2,y:y1+11,'text-anchor':'middle','font-size':10,fill:'var(--muted)','font-style':'italic'});
 }
 
 // Every pass's top row is unembedded and scored against the same targets, so every
@@ -353,8 +361,8 @@ function drawLoss(s){
   el('path',{d:`M${X(1)},${TARGY-16} v-4 H${GRIDR} v4`,fill:'none',stroke:'var(--line)','stroke-width':1},svg);
   txt(svg,'\u03A3 cross-entropy against the next token \u2014 every pass is scored, against these same targets',
     {x:(X(1)+GRIDR)/2,y:TARGY-25,'text-anchor':'middle','font-size':10,fill:'var(--muted)','font-style':'italic'},svg);
-  txt(svg,'training loss = L\u2081 + L\u2082 + L\u2083',
-    {x:(X(1)+GRIDR)/2,y:TARGY-37,'text-anchor':'middle','font-size':10.5,fill:'var(--ink)','font-style':'italic'},svg);
+  txt(svg,'training loss = L\u2081 + \u03BB(L\u2082 + L\u2083)/2',
+    {x:(X(1)+GRIDR)/2,y:TARGY-37,'text-anchor':'middle','font-size':11,fill:'var(--ink)','font-style':'italic'},svg);
 }
 
 function drawBlock(p,s,now){
@@ -391,7 +399,7 @@ function drawBlock(p,s,now){
       el('rect',{x:X(t)+3,y:Y(p,L)-1.5,width:CW-6,height:3,rx:1.5,fill:wire(t)},g);
     }
     if(done&&l===0&&t>1&&p>1){
-      txt(g,`z${t-1}`,{x:X(t)+CW/2,y:Y(p,0)+CH/2+2.8,'text-anchor':'middle','font-size':7.5,
+      txt(g,`h${t-1}`,{x:X(t)+CW/2,y:Y(p,0)+CH/2+2.8,'text-anchor':'middle','font-size':7.5,
         fill:wire(t-1),'font-weight':600,'pointer-events':'none'});
     }
     const set=()=>{if(!playing){hover={kind:l===L?'latent':'cell',p,t,l};render();}};
@@ -409,9 +417,6 @@ function drawTable(now){
     tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`;
     tbody.appendChild(tr);
   }
-  // Every pass carries a loss, so every pass is backpropagated: the extra passes cost
-  // whole training steps, not just forward passes.
-  costnote.textContent=`${PASSES}× the work of an ordinary training step here`;
 }
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
