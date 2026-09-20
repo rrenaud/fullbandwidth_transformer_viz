@@ -21,7 +21,7 @@ No build step, no dependencies — open any `index.html` directly in a browser.
 
 ## Visualizations
 
-### 01 — One grid, two orders
+### 01 — What can reach what
 [`viz/01-training-vs-inference/index.html`](viz/01-training-vs-inference/index.html)
 
 The core distinction the paper's argument turns on, laid out as a single grid of
