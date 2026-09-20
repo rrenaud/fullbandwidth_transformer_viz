@@ -156,7 +156,7 @@ footer a{color:inherit}
   </div>
 </main>
 
-<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row &mdash; carrying that row's latents, <i>z</i><sub>1</sub>&hellip;<i>z</i><sub>9</sub> &mdash; enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, PASSES=3, RHO=0.4;
@@ -231,8 +231,6 @@ function render(){
 
   for(let t=1;t<=T;t++) txt(svg,words[t-1],{x:X(t)+CW/2,y:18,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});
   txt(svg,'tokens',{x:PADL-12,y:18,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
-  txt(svg,'row L = z, the latent handed up to the next pass',
-    {x:GRIDR,y:blockTop(PASSES)-12,'text-anchor':'end','font-size':10,fill:'var(--blue)','font-style':'italic'});
 
   for(let p=1;p<PASSES;p++) drawBus(p,s);
   drawZeroTaps(s);
