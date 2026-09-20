@@ -91,8 +91,6 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .stage svg{width:100%;height:auto;display:block}
 .side{position:sticky;top:104px;display:flex;flex-direction:column;gap:18px}
 .side h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;margin:0 0 6px}
-.readout{border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-size:14.5px;min-height:4.6em}
-.readout .dim{color:var(--muted)}
 .notes{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;font-size:14.5px}
 .notes li{padding-left:13px;border-left:2px solid var(--line)}
 .notes b{font-weight:600}
@@ -139,10 +137,6 @@ footer a{color:inherit}
   <div class="layout">
     <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked bottom to top; each pass hands its top-layer latents up into the next pass's inputs, shifted one position"></svg></section>
     <aside class="side">
-      <div>
-        <h2>Right now</h2>
-        <div class="readout" id="readout"></div>
-      </div>
       <div>
         <h2>Exact prefix</h2>
         <table>
@@ -216,7 +210,6 @@ function curve(p,t){
 }
 
 const svg=document.getElementById('stage');
-const readout=document.getElementById('readout');
 const tbody=document.getElementById('tbody');
 const tickread=document.getElementById('tickread');
 const playBtn=document.getElementById('play');
@@ -248,7 +241,6 @@ function render(){
   tickread.textContent=`${s} / ${TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
   drawTable(now);
-  drawReadout(now);
 }
 
 // The return wire: out of the top of the latent row, up over the block, down the
@@ -351,32 +343,6 @@ function drawTable(now){
     tbody.appendChild(tr);
   }
   costnote.textContent=`${PASSES}× the forward work per step here`;
-}
-
-function drawReadout(now){
-  if(hover&&hover.kind==='latent'){
-    const {p,t}=hover;
-    const e=err[p][t];
-    const state=e===0?'already at the fixed point':'not yet at the fixed point';
-    const dot=p<PASSES?`<span style="color:${wire(t)}">\u25CF</span> `:'';
-    readout.innerHTML=p<PASSES
-      ? `${dot}<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — steps up into <b>position ${t+1}</b>'s input in pass ${p+1}, one column to the right of where it left.`
-      : `<b>z<sub>${t}</sub></b> from the final pass: ${state}. Nothing consumes it here — this is the latent the next training step, and inference, would use.`;
-    return;
-  }
-  if(hover&&hover.kind==='cell'){
-    const {p,t,l}=hover;
-    const e=err[p][t];
-    readout.innerHTML=`Pass ${p} · position ${t} · layer ${l===0?'in':l} — `+
-      (e===0?`<span style="color:var(--blue)">exact</span>: every latent it depends on had converged before this pass began.`
-            :`still off the fixed point, inherited from the stale <i>z</i><sub>${t-1}</sub> it was fed \u2014 fainter each pass as the feedback map contracts.`);
-    return;
-  }
-  if(!now){ readout.innerHTML=`<span class="dim">Press play. Each pass sweeps layer by layer, then hands its whole latent row back to the start.</span>`; return; }
-  const {p,l}=now;
-  readout.innerHTML=l===0
-    ? `<b>Pass ${p}</b> — inputs land. ${p===1?'There are no latents yet, so every position past the first is fed a zero.':`The latent row from pass ${p-1} arrives, shifted one position: <i>z</i><sub>t−1</sub> joins the input of position <i>t</i>.`}`
-    : `<b>Pass ${p}</b> — layer ${l} fires across all ${T} positions at once. Exact through <i>t</i> ≤ ${exactThrough(p)}.`;
 }
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
