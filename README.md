@@ -1,5 +1,7 @@
 # Full-Bandwidth Transformer — interactive visualizations
 
+Live site: **https://rrenaud.github.io/fullbandwidth_transformer_viz/**
+
 Interactive explainers built around the ideas in
 [Full-Bandwidth Transformer](https://arxiv.org/abs/2608.08888) (arXiv:2608.08888):
 autoregressive transformers get full bandwidth *across tokens* (dense attention lets
