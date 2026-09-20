@@ -67,6 +67,17 @@ Three things fall out of that, and the page animates all three:
 - **Inference pays none of it.** Decoding is already sequential, so `z[t-1]` is sitting
   there when step `t` starts. The iteration is a training-time cost — `k`× the forward
   work — buying a channel that is free at generation time.
+- **Only the last pass is scored.** Its top row is unembedded and compared against the
+  next token; passes 1 and 2 exist only to produce the latents pass 3 consumes. Stop the
+  gradient at each handoff and only the final pass is backpropagated, which is what makes
+  the extra passes cost forward work rather than whole training steps.
+
+Two things the diagram used to leave implicit are now drawn. The sequence enters at the
+foot and the targets leave at the head, with the loss bracketed across the final pass's
+top row — so that row is no longer a dead end. And each wire lands on a ⊕ rather than an
+arrowhead, with a side inset opening up one input cell: the latent is *fused into* the
+token embedding through a gated linear unit rather than replacing it, which is also why
+a zero latent (pass 1) leaves the vanilla input untouched.
 
 Each wire is coloured by the *source* position it carries, and the same colour caps the
 latent it leaves and labels the input it joins — so the whole ribbon is visibly the same
