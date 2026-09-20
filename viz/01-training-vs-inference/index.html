@@ -1,0 +1,708 @@
+<title>Full-Bandwidth Transformer</title>
+<style>
+  :root{
+    --bg:#f7f5f0;
+    --panel:#ffffff;
+    --panel-2:#eeece2;
+    --ink:#1a1c26;
+    --ink-dim:#5b5f72;
+    --border:#ddd8c8;
+    --blue:#1f6fb2;
+    --amber:#a8620a;
+    --violet:#7440c9;
+    --danger:#a83a2c;
+    --grid-line:#e2ddc9;
+    --focus:#1f6fb2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0a0e1a;
+      --panel:#121935;
+      --panel-2:#182042;
+      --ink:#edf0fb;
+      --ink-dim:#98a1c4;
+      --border:#232c4e;
+      --blue:#6cd0ff;
+      --amber:#ffb454;
+      --violet:#bd9bff;
+      --danger:#ff8b7a;
+      --grid-line:#1d2648;
+      --focus:#6cd0ff;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0e1a;
+    --panel:#121935;
+    --panel-2:#182042;
+    --ink:#edf0fb;
+    --ink-dim:#98a1c4;
+    --border:#232c4e;
+    --blue:#6cd0ff;
+    --amber:#ffb454;
+    --violet:#bd9bff;
+    --danger:#ff8b7a;
+    --grid-line:#1d2648;
+    --focus:#6cd0ff;
+  }
+
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important; transition:none!important;}
+  }
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+    line-height:1.55;
+    padding-inline:20px;
+    padding-block:40px;
+  }
+
+  .wrap{max-width:880px; margin:0 auto;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    font-size:12.5px;
+    letter-spacing:.06em;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+    display:flex;
+    gap:8px;
+    align-items:baseline;
+    flex-wrap:wrap;
+  }
+  .eyebrow a{color:var(--blue); text-decoration:none; border-bottom:1px solid currentColor;}
+  .eyebrow a:hover{opacity:.8;}
+
+  h1{
+    font-family:'Newsreader', Georgia, 'Times New Roman', serif;
+    font-style:italic;
+    font-weight:500;
+    font-optical-sizing:auto;
+    font-size:clamp(28px, 4.6vw, 42px);
+    line-height:1.15;
+    margin:10px 0 16px;
+    text-wrap:balance;
+    max-width:18ch;
+  }
+
+  .lede{
+    font-size:16.5px;
+    color:var(--ink-dim);
+    max-width:62ch;
+    margin:0 0 34px;
+  }
+  .lede strong{color:var(--ink); font-weight:600;}
+
+  section{margin-block:44px;}
+  h2{
+    font-family:'Newsreader', Georgia, serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:23px;
+    margin:0 0 12px;
+  }
+  p{margin:0 0 14px; max-width:66ch;}
+  .prose p{color:var(--ink);}
+
+  code, .mono{font-family:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;}
+
+  .quote{
+    border-left:3px solid var(--blue);
+    padding:4px 0 4px 18px;
+    margin:22px 0;
+    font-family:'Newsreader', Georgia, serif;
+    font-style:italic;
+    font-size:18px;
+    color:var(--ink);
+  }
+  .quote cite{
+    display:block;
+    margin-top:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-style:normal;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+
+  .eq{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14.5px;
+    overflow-x:auto;
+    margin:14px 0 18px;
+  }
+
+  /* ---- interactive panel ---- */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px 18px 20px;
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .tab{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink-dim);
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:7px 14px;
+    cursor:pointer;
+  }
+  .tab[aria-pressed="true"]{
+    background:var(--ink);
+    color:var(--bg);
+    border-color:var(--ink);
+  }
+  .tab:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--focus);
+    outline-offset:2px;
+  }
+
+  .caption{
+    min-height:42px;
+    font-size:14.5px;
+    color:var(--ink-dim);
+    margin-bottom:10px;
+  }
+  .caption b{color:var(--ink); font-weight:600;}
+
+  .diagram-scroll{overflow-x:auto;}
+  svg.diagram{
+    display:block;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    margin:6px auto 4px;
+  }
+
+  .cell{
+    stroke:var(--grid-line);
+    stroke-width:1.5;
+    fill:var(--panel-2);
+    transition:fill .25s ease, stroke .25s ease, opacity .25s ease;
+  }
+  .cell[data-state="active"]{
+    fill:var(--blue);
+    fill-opacity:.28;
+    stroke:var(--blue);
+    stroke-width:2.25;
+  }
+  .cell[data-state="done"]{
+    fill:var(--ink-dim);
+    fill-opacity:.16;
+    stroke:var(--ink-dim);
+  }
+  .cell[data-discard="1"]{
+    stroke:var(--amber);
+    stroke-dasharray:3 3;
+  }
+  .cell[data-fedback="1"]{
+    stroke:var(--violet);
+    stroke-width:2.5;
+  }
+
+  .row-label, .col-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    fill:var(--ink-dim);
+  }
+  .col-label{font-weight:500;}
+
+  .lane-track{fill:none; stroke:var(--border); stroke-width:14; stroke-linecap:round;}
+  .lane-amber{fill:none; stroke:var(--amber); stroke-width:4; stroke-linecap:round; opacity:0; transition:opacity .3s ease;}
+  .lane-amber[data-on="1"]{opacity:1;}
+  .lane-violet{fill:none; stroke:var(--violet); stroke-width:12; stroke-linecap:round; opacity:0; transition:opacity .3s ease;}
+  .lane-violet[data-on="1"]{opacity:.85;}
+  .gate{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    fill:var(--violet);
+    text-anchor:middle;
+    opacity:0;
+    transition:opacity .3s ease;
+  }
+  .gate[data-on="1"]{opacity:1;}
+  .lane-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    fill:var(--ink-dim);
+  }
+
+  .stats{
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+    margin:14px 0 4px;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+  }
+  .stat .k{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:20px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  .stat .l{
+    font-size:11.5px;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink);
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 12px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .btn:hover{border-color:var(--ink-dim);}
+  .btn.primary{
+    background:var(--ink);
+    color:var(--bg);
+    border-color:var(--ink);
+    min-width:76px;
+  }
+  .speed{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-left:auto;
+    font-size:12px;
+    color:var(--ink-dim);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .speed input[type="range"]{width:110px;}
+
+  .legend{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-top:14px;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .sw{width:12px; height:12px; border-radius:3px; display:inline-block; flex:none;}
+  .sw.pending{background:var(--panel-2); border:1.5px solid var(--grid-line);}
+  .sw.active{background:var(--blue); opacity:.4; border:1.5px solid var(--blue);}
+  .sw.done{background:var(--ink-dim); opacity:.3; border:1.5px solid var(--ink-dim);}
+  .sw.discard{background:transparent; border:1.5px dashed var(--amber);}
+  .sw.fedback{background:transparent; border:2px solid var(--violet);}
+
+  footer{
+    margin-top:56px;
+    padding-top:20px;
+    border-top:1px solid var(--border);
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+  footer a{color:var(--blue);}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+
+  <div class="eyebrow">
+    <span>An explainer of</span>
+    <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">arXiv:2608.08888 — Full-Bandwidth Transformer</a>
+  </div>
+  <h1>Depth is parallel while you train it. It's already sequential once you run it.</h1>
+  <p class="lede">
+    Autoregressive training sweeps one <strong>layer</strong> at a time across every token at once.
+    Autoregressive inference sweeps one <strong>token</strong> at a time through every layer.
+    Standard decoding forces inference to imitate training's rule that a layer can't see a deeper
+    layer's output from an earlier position &mdash; a rule training needed for its parallelism, and
+    inference, being sequential over tokens anyway, gets nothing from keeping. Step through both below.
+  </p>
+
+  <div class="panel" id="app">
+    <div class="tabs" role="tablist" aria-label="Computation mode">
+      <button class="tab" id="tab-training" role="tab" aria-pressed="true">Training &mdash; teacher forcing</button>
+      <button class="tab" id="tab-naive" role="tab" aria-pressed="false">Naive autoregressive inference</button>
+      <button class="tab" id="tab-latent" role="tab" aria-pressed="false">Full-bandwidth (latent feedback)</button>
+    </div>
+
+    <div class="caption" id="caption" aria-live="polite"></div>
+
+    <div class="diagram-scroll">
+      <svg class="diagram" id="svg" viewBox="0 0 644 392" role="img" aria-labelledby="svgTitle">
+        <title id="svgTitle">Grid of transformer layers by token position, showing compute order and the channel carrying information from one decoding step to the next.</title>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <span><i class="sw pending"></i>not yet computed</span>
+      <span><i class="sw active"></i>computing now</span>
+      <span><i class="sw done"></i>computed</span>
+      <span id="legend-discard" hidden><i class="sw discard"></i>computed, then thrown away</span>
+      <span id="legend-fedback" hidden><i class="sw fedback"></i>computed, fed back in</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k mono" id="stat-steps">0 / 0</div><div class="l">sequential steps so far</div></div>
+      <div class="stat"><div class="k mono" id="stat-tokens">0 / 6</div><div class="l">token columns finished</div></div>
+      <div class="stat"><div class="k mono" id="stat-bits">&ndash;</div><div class="l">carried to next token</div></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="btn-reset">Reset</button>
+      <button class="btn" id="btn-back">&larr; Step</button>
+      <button class="btn primary" id="btn-play">Play</button>
+      <button class="btn" id="btn-fwd">Step &rarr;</button>
+      <div class="speed">
+        <label for="speed">speed</label>
+        <input type="range" id="speed" min="1" max="4" step="1" value="2">
+      </div>
+    </div>
+  </div>
+
+  <section class="prose">
+    <h2>Why training needs the rule</h2>
+    <p>
+      Write the hidden state of token <code>t</code> at layer <code>&#8467;</code> as <code>h[t,&#8467;]</code>.
+      Training processes a whole sequence with teacher forcing: it runs layer 1 for every position at once, then
+      layer 2 for every position at once, and so on. That parallel sweep is only legal if no layer needs a
+      <em>deeper</em> layer's output from an earlier position that hasn't been computed yet &mdash; formally,
+    </p>
+    <div class="eq">h[t, &#8467;] cannot read h[t&prime;, &#8467;&prime;] &nbsp;for&nbsp; t&prime; &lt; t &nbsp;and&nbsp; &#8467;&prime; &ge; &#8467;</div>
+    <p>
+      the paper's <em>depth-frozen</em> constraint. It's the reason the grid above fills in row by row instead of
+      column by column during training.
+    </p>
+  </section>
+
+  <section class="prose">
+    <h2>Why inference doesn't need it</h2>
+    <p>
+      Generation is already sequential over tokens &mdash; you can't sample token <code>t+1</code> before you
+      know token <code>t</code>. By the time inference starts on a new token, every earlier column in the grid
+      is already sitting there fully computed, top layer included, in the KV cache. Standard decoding still
+      squeezes the handoff to the next token through the sampled token id &mdash; at most
+      <code>log&#8322;|V|</code> bits &mdash; and lets the rest of that finished column evaporate.
+    </p>
+    <div class="quote">
+      "Sequential computation is required only across layers, not across tokens. At decoding time&hellip;
+      generation is already sequential over tokens, so the constraint buys nothing."
+      <cite>Full-Bandwidth Transformer, arXiv:2608.08888</cite>
+    </div>
+    <p>
+      That's the pessimization: inference pays the depth-frozen constraint's cost (recomputing each token's
+      stack from a thin token embedding) without getting its benefit (parallelism across tokens), because
+      inference was never going to be parallel across tokens in the first place.
+    </p>
+  </section>
+
+  <section class="prose">
+    <h2>Widening the channel</h2>
+    <p>
+      The paper's fix, <em>latent feedback</em>, reuses the discarded top-layer state instead of only the
+      sampled token. It fuses the previous top-layer state <code>h<sub>t&minus;1</sub></code> with the new
+      token embedding <code>e<sub>t</sub></code> through a gated linear unit and feeds that fused vector in as
+      the next input &mdash; the violet band in the channel above, riding alongside the token id rather than
+      replacing it:
+    </p>
+    <div class="eq">e<sub>t</sub> &otimes; h<sub>t&minus;1</sub> &nbsp;=&nbsp; W<sup>U</sup>h<sub>t&minus;1</sub> &nbsp;&#8857;&nbsp; &sigma;(W<sup>G</sup>e<sub>t</sub>)</div>
+    <p>
+      No extra transformer-block evaluations per generated token, no change to the KV cache, no change to the
+      language-modeling objective &mdash; just a wider handoff between one decoding step and the next.
+    </p>
+  </section>
+
+  <footer>
+    Unofficial explainer based on <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer (arXiv:2608.08888)</a>.
+    Token counts, layer counts, and the vocabulary size below are illustrative, not from the paper's actual experiments.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var TOKENS = ["The","cat","sat","on","the","mat"];
+  var T = TOKENS.length;
+  var L = 4;
+  var LAYER_NAMES = ["Layer 1","Layer 2","Layer 3","Layer 4"];
+  var VOCAB = 50000;
+  var DMODEL = 4096;
+  var narrowBits = Math.ceil(Math.log2(VOCAB));
+  var wideBits = narrowBits + DMODEL * 16;
+
+  var geo = {
+    marginLeft: 64,
+    marginTop: 24,
+    cellW: 84,
+    cellH: 54,
+    gapX: 12,
+    gapY: 9
+  };
+  geo.gridW = T * geo.cellW + (T - 1) * geo.gapX;
+  geo.gridH = L * geo.cellH + (L - 1) * geo.gapY;
+  geo.colLabelY = geo.marginTop + geo.gridH + 18;
+  geo.laneY = geo.colLabelY + 26;
+  geo.laneLabelY = geo.laneY + 22;
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("svg");
+  svg.setAttribute("viewBox", "0 0 644 " + (geo.laneLabelY + 14));
+
+  function xFor(col){ return geo.marginLeft + col * (geo.cellW + geo.gapX); }
+  function yFor(row){ return geo.marginTop + (L - 1 - row) * (geo.cellH + geo.gapY); }
+
+  function el(tag, attrs){
+    var n = document.createElementNS(svgNS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  // ---- build static + dynamic svg pieces once ----
+  var cells = []; // cells[col][row]
+  for (var c = 0; c < T; c++){
+    cells.push([]);
+    for (var r = 0; r < L; r++){
+      var rect = el("rect", {
+        class: "cell",
+        x: xFor(c), y: yFor(r),
+        width: geo.cellW, height: geo.cellH,
+        rx: 8
+      });
+      svg.appendChild(rect);
+      cells[c].push(rect);
+    }
+    var colLabel = el("text", {
+      class: "col-label",
+      x: xFor(c) + geo.cellW / 2, y: geo.colLabelY,
+      "text-anchor": "middle"
+    });
+    colLabel.textContent = TOKENS[c];
+    svg.appendChild(colLabel);
+  }
+  for (var r2 = 0; r2 < L; r2++){
+    var rl = el("text", {
+      class: "row-label",
+      x: geo.marginLeft - 10, y: yFor(r2) + geo.cellH / 2 + 4,
+      "text-anchor": "end"
+    });
+    rl.textContent = LAYER_NAMES[r2];
+    svg.appendChild(rl);
+  }
+
+  // feedback channel: one track spanning all tokens, segment pieces per gap
+  var laneX0 = xFor(0) + geo.cellW / 2;
+  var laneX1 = xFor(T - 1) + geo.cellW / 2;
+  svg.appendChild(el("line", {
+    class: "lane-track",
+    x1: laneX0, y1: geo.laneY, x2: laneX1, y2: geo.laneY
+  }));
+  var laneViolet = el("line", {
+    class: "lane-violet", "data-on": "0",
+    x1: laneX0, y1: geo.laneY, x2: laneX0, y2: geo.laneY
+  });
+  var laneAmber = el("line", {
+    class: "lane-amber", "data-on": "0",
+    x1: laneX0, y1: geo.laneY, x2: laneX0, y2: geo.laneY
+  });
+  svg.appendChild(laneViolet);
+  svg.appendChild(laneAmber);
+  var gateLabel = el("text", { class: "gate", "data-on": "0", x: laneX0, y: geo.laneY - 12 });
+  gateLabel.textContent = "⊗ gate";
+  svg.appendChild(gateLabel);
+  var laneLabel = el("text", { class: "lane-label", x: laneX0, y: geo.laneLabelY, "text-anchor": "start" });
+  svg.appendChild(laneLabel);
+
+  // ---- state ----
+  var mode = "training";
+  var step = 2;
+  var playing = false;
+  var timer = null;
+
+  function totalSteps(m){ return m === "training" ? L : T * L; }
+
+  function render(){
+    var n = step;
+    var discardOn = mode === "naive";
+    var fedOn = mode === "latent";
+    document.getElementById("legend-discard").hidden = !discardOn;
+    document.getElementById("legend-fedback").hidden = !fedOn;
+
+    var completedCols, rowsDoneInCurrent, activeCol;
+    if (mode === "training"){
+      completedCols = -1; // unused
+    } else {
+      completedCols = Math.min(Math.floor(n / L), T);
+      rowsDoneInCurrent = n % L;
+      activeCol = completedCols < T ? completedCols : -1;
+    }
+
+    for (var c = 0; c < T; c++){
+      for (var r = 0; r < L; r++){
+        var state, isDiscard = false, isFed = false;
+        if (mode === "training"){
+          state = r < n ? "done" : (r === n ? "active" : "pending");
+        } else {
+          if (c < completedCols) state = "done";
+          else if (c > completedCols) state = "pending";
+          else {
+            state = r < rowsDoneInCurrent ? "done" : (r === rowsDoneInCurrent ? "active" : "pending");
+          }
+          if (state === "done" && r === L - 1){
+            if (discardOn) isDiscard = true;
+            if (fedOn) isFed = true;
+          }
+        }
+        cells[c][r].setAttribute("data-state", state);
+        cells[c][r].setAttribute("data-discard", isDiscard ? "1" : "0");
+        cells[c][r].setAttribute("data-fedback", isFed ? "1" : "0");
+      }
+    }
+
+    // channel lane
+    var filledUpTo; // index of last column index whose *outgoing* segment is filled
+    if (mode === "training"){
+      filledUpTo = T - 1; // ground truth already known end-to-end
+    } else {
+      filledUpTo = completedCols - 1; // columns fully done have delivered their handoff
+    }
+    var xEnd = filledUpTo >= 0 ? xFor(Math.min(filledUpTo + 1, T - 1)) + geo.cellW / 2 : laneX0;
+    if (mode !== "training" && filledUpTo < 0) xEnd = laneX0;
+
+    laneAmber.setAttribute("x2", xEnd);
+    laneAmber.setAttribute("data-on", (mode === "training" || filledUpTo >= 0) ? "1" : "0");
+
+    laneViolet.setAttribute("x2", xEnd);
+    laneViolet.setAttribute("data-on", mode === "latent" && filledUpTo >= 0 ? "1" : "0");
+
+    gateLabel.setAttribute("x", xEnd);
+    gateLabel.setAttribute("data-on", mode === "latent" && filledUpTo >= 0 && filledUpTo < T - 1 ? "1" : "0");
+
+    if (mode === "training"){
+      laneLabel.textContent = "ground-truth tokens — all known upfront, nothing to wait on";
+    } else if (mode === "naive"){
+      laneLabel.textContent = "carries only the sampled token id — ≈" + narrowBits + " bits/step";
+    } else {
+      laneLabel.textContent = "carries the token id + fused top-layer state — ≈" + wideBits.toLocaleString() + " bits/step";
+    }
+
+    // stats
+    var tot = totalSteps(mode);
+    document.getElementById("stat-steps").textContent = n + " / " + tot;
+    if (mode === "training"){
+      document.getElementById("stat-tokens").textContent = T + " (parallel)";
+      document.getElementById("stat-bits").textContent = "n/a — no handoff needed";
+    } else {
+      var finished = Math.max(0, completedCols);
+      document.getElementById("stat-tokens").textContent = finished + " / " + T;
+      document.getElementById("stat-bits").textContent = mode === "naive" ? ("≈" + narrowBits + " bits") : ("≈" + wideBits.toLocaleString() + " bits");
+    }
+
+    document.getElementById("caption").innerHTML = captionFor(mode, n, completedCols, rowsDoneInCurrent);
+
+    document.getElementById("btn-back").disabled = n <= 0;
+    document.getElementById("btn-fwd").disabled = n >= tot;
+    document.getElementById("btn-play").textContent = playing ? "Pause" : "Play";
+  }
+
+  function captionFor(m, n, completedCols, rowsDoneInCurrent){
+    if (m === "training"){
+      if (n === 0) return "Layer 1 is about to run for <b>all six tokens at once</b> — that's what \"teacher forcing\" buys you.";
+      if (n >= L) return "All " + L + " layers done. The whole pass took just <b>" + L + " sequential steps</b>, no matter how many tokens were in the batch.";
+      return "Layer " + (n + 1) + " runs for all six tokens simultaneously — step " + (n + 1) + " of " + L + ", independent of sequence length.";
+    }
+    var col = Math.min(completedCols, T - 1);
+    var tokenWord = TOKENS[col];
+    if (n >= T * L) return "All " + T + " tokens fully decoded. Total sequential steps: <b>" + (T * L) + "</b> (" + T + " tokens × " + L + " layers) — the same total either way.";
+    if (rowsDoneInCurrent === 0 && completedCols > 0){
+      return (m === "naive")
+        ? "Token \"<b>" + tokenWord + "</b>\" starts from scratch, seeded only by the previous token id."
+        : "Token \"<b>" + tokenWord + "</b>\" starts seeded by the previous token id <i>and</i> its fused top-layer state.";
+    }
+    if (rowsDoneInCurrent === L - 1){
+      return (m === "naive")
+        ? "Top layer for \"<b>" + tokenWord + "</b>\" just finished. That full hidden state is about to be <b>discarded</b> — only the sampled token id moves on."
+        : "Top layer for \"<b>" + tokenWord + "</b>\" just finished. It gets fused with the next token embedding through the ⊗ gate instead of being thrown away.";
+    }
+    return "Token \"<b>" + tokenWord + "</b>\" must finish layer " + rowsDoneInCurrent + " before layer " + (rowsDoneInCurrent + 1) + " can start — this part is inherently sequential either way.";
+  }
+
+  function setStep(n){
+    var tot = totalSteps(mode);
+    step = Math.max(0, Math.min(tot, n));
+    render();
+  }
+
+  function setMode(m){
+    mode = m;
+    document.getElementById("tab-training").setAttribute("aria-pressed", m === "training");
+    document.getElementById("tab-naive").setAttribute("aria-pressed", m === "naive");
+    document.getElementById("tab-latent").setAttribute("aria-pressed", m === "latent");
+    step = m === "training" ? 2 : 5;
+    stopPlaying();
+    render();
+  }
+
+  function stopPlaying(){
+    playing = false;
+    if (timer){ clearInterval(timer); timer = null; }
+  }
+
+  function tick(){
+    var tot = totalSteps(mode);
+    if (step >= tot){ stopPlaying(); render(); return; }
+    setStep(step + 1);
+  }
+
+  document.getElementById("tab-training").addEventListener("click", function(){ setMode("training"); });
+  document.getElementById("tab-naive").addEventListener("click", function(){ setMode("naive"); });
+  document.getElementById("tab-latent").addEventListener("click", function(){ setMode("latent"); });
+
+  document.getElementById("btn-reset").addEventListener("click", function(){ stopPlaying(); setStep(0); });
+  document.getElementById("btn-back").addEventListener("click", function(){ stopPlaying(); setStep(step - 1); });
+  document.getElementById("btn-fwd").addEventListener("click", function(){ stopPlaying(); setStep(step + 1); });
+
+  var speedEl = document.getElementById("speed");
+  function intervalMs(){
+    var v = parseInt(speedEl.value, 10);
+    return { 1: 900, 2: 550, 3: 320, 4: 160 }[v] || 550;
+  }
+  document.getElementById("btn-play").addEventListener("click", function(){
+    if (playing){ stopPlaying(); render(); return; }
+    if (step >= totalSteps(mode)) step = 0;
+    playing = true;
+    render();
+    timer = setInterval(tick, intervalMs());
+  });
+  speedEl.addEventListener("input", function(){
+    if (playing){ clearInterval(timer); timer = setInterval(tick, intervalMs()); }
+  });
+
+  render();
+})();
+</script>
