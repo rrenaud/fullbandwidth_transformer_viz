@@ -89,7 +89,7 @@ footer a{color:inherit}
 
   <table class="stattable">
     <thead>
-      <tr><th>Regime</th><th>Steps</th><th>Reach</th><th>Blocked, cell</th><th>Blocked, total</th></tr>
+      <tr><th>Regime</th><th>Steps</th><th>Reach</th><th>Blocked, total</th></tr>
     </thead>
     <tbody id="stattbody"></tbody>
   </table>
@@ -171,12 +171,11 @@ const stattbody=document.getElementById('stattbody');
 const statOut={};
 CONFIG.forEach(cfg=>{
   const tr=document.createElement('tr');
-  tr.innerHTML=`<th>${cfg.title}</th><td data-f="steps"></td><td class="blue" data-f="reach"></td><td class="red" data-f="red"></td><td class="red" data-f="cum"></td>`;
+  tr.innerHTML=`<th>${cfg.title}</th><td data-f="steps"></td><td class="blue" data-f="reach"></td><td class="red" data-f="cum"></td>`;
   stattbody.appendChild(tr);
   statOut[cfg.mode]={
     steps: tr.querySelector('[data-f="steps"]'),
     reach: tr.querySelector('[data-f="reach"]'),
-    red: tr.querySelector('[data-f="red"]'),
     cum: tr.querySelector('[data-f="cum"]'),
   };
 });
@@ -267,14 +266,10 @@ function buildPanel(cfg){
     }
 
     out.steps.textContent=`${s} / ${total(mode)}`;
-    if(focus){
-      out.reach.textContent=reachCount(mode,focus);
-      out.red.textContent=redCount(mode,focus,time);
-    } else {
-      out.reach.textContent='–';
-      out.red.textContent='–';
-    }
-    out.cum.textContent=`${cumRed(mode,time)}`;
+    out.reach.textContent=focus?reachCount(mode,focus):'–';
+    // Training and latent feedback never leave anything out of reach - only
+    // naive inference does - so show a dash rather than a permanent zero.
+    out.cum.textContent=mode==='infer'?`${cumRed(mode,time)}`:'–';
   }
 
   render();
