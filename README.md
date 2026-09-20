@@ -22,7 +22,6 @@ No build step, no dependencies — open any `index.html` directly in a browser.
 ## Visualizations
 
 ### 01 — What can reach what
-[`viz/01-training-vs-inference/index.html`](viz/01-training-vs-inference/index.html)
 
 The core distinction the paper's argument turns on, laid out as a single grid of
 hidden states `h[t, ℓ]` (token position × layer):
@@ -45,9 +44,6 @@ at the instant it fires and see exactly which earlier states it can read (blue),
 which it reads directly (solid blue), and which are already sitting there
 computed but architecturally out of reach (red), with a live count of how much
 reachable information is going unused right now.
-
-Live: https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/01-training-vs-inference/
-(also on [Claude Artifacts](https://claude.ai/artifact/56qd3QqQL93wk6tqLNJ97d))
 
 ## Roadmap ideas
 
