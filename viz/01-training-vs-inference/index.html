@@ -1,708 +1,296 @@
-<title>Full-Bandwidth Transformer</title>
+<title>One grid, two orders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#f7f5f0;
-    --panel:#ffffff;
-    --panel-2:#eeece2;
-    --ink:#1a1c26;
-    --ink-dim:#5b5f72;
-    --border:#ddd8c8;
-    --blue:#1f6fb2;
-    --amber:#a8620a;
-    --violet:#7440c9;
-    --danger:#a83a2c;
-    --grid-line:#e2ddc9;
-    --focus:#1f6fb2;
+:root{
+  --bg:#FAFAF7; --ink:#1B1B1B; --muted:#6B6B6B; --line:#CFCFCA;
+  --blue:#1F7FA6; --blue-soft:rgba(31,127,166,.16);
+  --yellow:#B98A00; --yellow-soft:rgba(185,138,0,.22);
+  --red:#D0402F; --red-soft:rgba(208,64,47,.2);
+  --grey-soft:rgba(0,0,0,.06); --panel:#F0EFEA;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000; --ink:#ECECEC; --muted:#9A9A9A; --line:#3A3A3A;
+    --blue:#58C4DD; --blue-soft:rgba(88,196,221,.18);
+    --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.28);
+    --red:#FC6255; --red-soft:rgba(252,98,85,.24);
+    --grey-soft:rgba(255,255,255,.06); --panel:#121212;
   }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#0a0e1a;
-      --panel:#121935;
-      --panel-2:#182042;
-      --ink:#edf0fb;
-      --ink-dim:#98a1c4;
-      --border:#232c4e;
-      --blue:#6cd0ff;
-      --amber:#ffb454;
-      --violet:#bd9bff;
-      --danger:#ff8b7a;
-      --grid-line:#1d2648;
-      --focus:#6cd0ff;
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#0a0e1a;
-    --panel:#121935;
-    --panel-2:#182042;
-    --ink:#edf0fb;
-    --ink-dim:#98a1c4;
-    --border:#232c4e;
-    --blue:#6cd0ff;
-    --amber:#ffb454;
-    --violet:#bd9bff;
-    --danger:#ff8b7a;
-    --grid-line:#1d2648;
-    --focus:#6cd0ff;
-  }
-
-  *{box-sizing:border-box;}
-  @media (prefers-reduced-motion: reduce){
-    *{animation:none!important; transition:none!important;}
-  }
-
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
-    line-height:1.55;
-    padding-inline:20px;
-    padding-block:40px;
-  }
-
-  .wrap{max-width:880px; margin:0 auto;}
-
-  .eyebrow{
-    font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
-    font-size:12.5px;
-    letter-spacing:.06em;
-    color:var(--ink-dim);
-    text-transform:uppercase;
-    display:flex;
-    gap:8px;
-    align-items:baseline;
-    flex-wrap:wrap;
-  }
-  .eyebrow a{color:var(--blue); text-decoration:none; border-bottom:1px solid currentColor;}
-  .eyebrow a:hover{opacity:.8;}
-
-  h1{
-    font-family:'Newsreader', Georgia, 'Times New Roman', serif;
-    font-style:italic;
-    font-weight:500;
-    font-optical-sizing:auto;
-    font-size:clamp(28px, 4.6vw, 42px);
-    line-height:1.15;
-    margin:10px 0 16px;
-    text-wrap:balance;
-    max-width:18ch;
-  }
-
-  .lede{
-    font-size:16.5px;
-    color:var(--ink-dim);
-    max-width:62ch;
-    margin:0 0 34px;
-  }
-  .lede strong{color:var(--ink); font-weight:600;}
-
-  section{margin-block:44px;}
-  h2{
-    font-family:'Newsreader', Georgia, serif;
-    font-style:italic;
-    font-weight:500;
-    font-size:23px;
-    margin:0 0 12px;
-  }
-  p{margin:0 0 14px; max-width:66ch;}
-  .prose p{color:var(--ink);}
-
-  code, .mono{font-family:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;}
-
-  .quote{
-    border-left:3px solid var(--blue);
-    padding:4px 0 4px 18px;
-    margin:22px 0;
-    font-family:'Newsreader', Georgia, serif;
-    font-style:italic;
-    font-size:18px;
-    color:var(--ink);
-  }
-  .quote cite{
-    display:block;
-    margin-top:8px;
-    font-family:'IBM Plex Mono', monospace;
-    font-style:normal;
-    font-size:12px;
-    color:var(--ink-dim);
-  }
-
-  .eq{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:14px 16px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:14.5px;
-    overflow-x:auto;
-    margin:14px 0 18px;
-  }
-
-  /* ---- interactive panel ---- */
-  .panel{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:18px 18px 20px;
-  }
-
-  .tabs{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-bottom:14px;
-  }
-  .tab{
-    font-family:'IBM Plex Sans', sans-serif;
-    font-size:13.5px;
-    font-weight:500;
-    color:var(--ink-dim);
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-radius:999px;
-    padding:7px 14px;
-    cursor:pointer;
-  }
-  .tab[aria-pressed="true"]{
-    background:var(--ink);
-    color:var(--bg);
-    border-color:var(--ink);
-  }
-  .tab:focus-visible, button:focus-visible, input:focus-visible{
-    outline:2px solid var(--focus);
-    outline-offset:2px;
-  }
-
-  .caption{
-    min-height:42px;
-    font-size:14.5px;
-    color:var(--ink-dim);
-    margin-bottom:10px;
-  }
-  .caption b{color:var(--ink); font-weight:600;}
-
-  .diagram-scroll{overflow-x:auto;}
-  svg.diagram{
-    display:block;
-    width:100%;
-    max-width:100%;
-    height:auto;
-    margin:6px auto 4px;
-  }
-
-  .cell{
-    stroke:var(--grid-line);
-    stroke-width:1.5;
-    fill:var(--panel-2);
-    transition:fill .25s ease, stroke .25s ease, opacity .25s ease;
-  }
-  .cell[data-state="active"]{
-    fill:var(--blue);
-    fill-opacity:.28;
-    stroke:var(--blue);
-    stroke-width:2.25;
-  }
-  .cell[data-state="done"]{
-    fill:var(--ink-dim);
-    fill-opacity:.16;
-    stroke:var(--ink-dim);
-  }
-  .cell[data-discard="1"]{
-    stroke:var(--amber);
-    stroke-dasharray:3 3;
-  }
-  .cell[data-fedback="1"]{
-    stroke:var(--violet);
-    stroke-width:2.5;
-  }
-
-  .row-label, .col-label{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    fill:var(--ink-dim);
-  }
-  .col-label{font-weight:500;}
-
-  .lane-track{fill:none; stroke:var(--border); stroke-width:14; stroke-linecap:round;}
-  .lane-amber{fill:none; stroke:var(--amber); stroke-width:4; stroke-linecap:round; opacity:0; transition:opacity .3s ease;}
-  .lane-amber[data-on="1"]{opacity:1;}
-  .lane-violet{fill:none; stroke:var(--violet); stroke-width:12; stroke-linecap:round; opacity:0; transition:opacity .3s ease;}
-  .lane-violet[data-on="1"]{opacity:.85;}
-  .gate{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:13px;
-    fill:var(--violet);
-    text-anchor:middle;
-    opacity:0;
-    transition:opacity .3s ease;
-  }
-  .gate[data-on="1"]{opacity:1;}
-  .lane-label{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:10.5px;
-    fill:var(--ink-dim);
-  }
-
-  .stats{
-    display:flex;
-    gap:22px;
-    flex-wrap:wrap;
-    margin:14px 0 4px;
-    padding-top:14px;
-    border-top:1px solid var(--border);
-  }
-  .stat .k{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:20px;
-    font-variant-numeric:tabular-nums;
-    color:var(--ink);
-  }
-  .stat .l{
-    font-size:11.5px;
-    color:var(--ink-dim);
-    text-transform:uppercase;
-    letter-spacing:.05em;
-  }
-
-  .controls{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:16px;
-  }
-  .btn{
-    font-family:'IBM Plex Sans', sans-serif;
-    font-size:13.5px;
-    font-weight:500;
-    color:var(--ink);
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:8px 12px;
-    cursor:pointer;
-    line-height:1;
-  }
-  .btn:hover{border-color:var(--ink-dim);}
-  .btn.primary{
-    background:var(--ink);
-    color:var(--bg);
-    border-color:var(--ink);
-    min-width:76px;
-  }
-  .speed{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-left:auto;
-    font-size:12px;
-    color:var(--ink-dim);
-    font-family:'IBM Plex Mono', monospace;
-  }
-  .speed input[type="range"]{width:110px;}
-
-  .legend{
-    display:flex;
-    gap:16px;
-    flex-wrap:wrap;
-    margin-top:14px;
-    font-size:12px;
-    color:var(--ink-dim);
-  }
-  .legend span{display:inline-flex; align-items:center; gap:6px;}
-  .sw{width:12px; height:12px; border-radius:3px; display:inline-block; flex:none;}
-  .sw.pending{background:var(--panel-2); border:1.5px solid var(--grid-line);}
-  .sw.active{background:var(--blue); opacity:.4; border:1.5px solid var(--blue);}
-  .sw.done{background:var(--ink-dim); opacity:.3; border:1.5px solid var(--ink-dim);}
-  .sw.discard{background:transparent; border:1.5px dashed var(--amber);}
-  .sw.fedback{background:transparent; border:2px solid var(--violet);}
-
-  footer{
-    margin-top:56px;
-    padding-top:20px;
-    border-top:1px solid var(--border);
-    font-size:12.5px;
-    color:var(--ink-dim);
-  }
-  footer a{color:var(--blue);}
+}
+:root[data-theme="dark"]{
+  --bg:#000; --ink:#ECECEC; --muted:#9A9A9A; --line:#3A3A3A;
+  --blue:#58C4DD; --blue-soft:rgba(88,196,221,.18);
+  --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.28);
+  --red:#FC6255; --red-soft:rgba(252,98,85,.24);
+  --grey-soft:rgba(255,255,255,.06); --panel:#121212;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"STIX Two Text","Times New Roman",Georgia,serif;font-size:18px;line-height:1.55}
+main{max-width:1180px;margin:0 auto;padding-inline:24px;padding-block:36px 56px}
+.byline{margin:0 0 6px;font-size:14.5px;color:var(--muted)}
+.byline a{color:inherit}
+h1{font-weight:400;font-size:clamp(30px,4.4vw,48px);line-height:1.1;margin:0 0 12px;letter-spacing:-.01em;text-wrap:balance}
+.thesis{max-width:62ch;color:var(--muted);margin:0 0 28px;font-size:19px}
+.thesis i{color:var(--ink)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:36px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.stage svg{width:100%;height:auto;display:block}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0 14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{font:inherit;font-size:16px;background:none;color:var(--muted);border:0;border-radius:999px;padding:6px 14px;cursor:pointer}
+.seg button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
+.btn{font:inherit;font-size:16px;background:none;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;min-width:44px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--yellow)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat .v{font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .k{font-size:14px;color:var(--muted);line-height:1.3}
+.stat.red .v{color:var(--red)} .stat.blue .v{color:var(--blue)}
+.notes{background:var(--panel);border-radius:6px;padding:22px 22px 18px}
+.notes h2{font-weight:400;font-size:24px;margin:0 0 10px}
+.notes p{margin:0 0 12px;font-size:17px}
+.notes .eq{font-size:15.5px;background:var(--grey-soft);border-radius:4px;padding:8px 10px;margin:0 0 12px;overflow-x:auto}
+.notes .quote{font-style:italic;margin:0 0 12px;padding-left:12px;border-left:2px solid var(--blue)}
+.notes .quote cite{display:block;font-style:normal;font-size:13px;color:var(--muted);margin-top:4px}
+.notes .hint{color:var(--muted);font-size:15px;border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted);margin:8px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+.readout{min-height:1.6em;margin:0 0 6px;font-size:17px}
+i.m{font-style:italic}
+footer{max-width:1180px;margin:32px auto 0;padding:20px 24px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+footer a{color:inherit}
 </style>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<main>
+  <p class="byline">An explainer of <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a></p>
+  <h1>One grid, two orders</h1>
+  <p class="thesis">Every hidden state <i>h</i> in a decoder sits at a position <i>t</i> and a layer &#8467;. Training fills this grid one row at a time. Inference fills it one column at a time, yet still obeys the reading rule that the row order made necessary &mdash; even though nothing forces it to.</p>
 
-<div class="wrap">
-
-  <div class="eyebrow">
-    <span>An explainer of</span>
-    <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">arXiv:2608.08888 — Full-Bandwidth Transformer</a>
-  </div>
-  <h1>Depth is parallel while you train it. It's already sequential once you run it.</h1>
-  <p class="lede">
-    Autoregressive training sweeps one <strong>layer</strong> at a time across every token at once.
-    Autoregressive inference sweeps one <strong>token</strong> at a time through every layer.
-    Standard decoding forces inference to imitate training's rule that a layer can't see a deeper
-    layer's output from an earlier position &mdash; a rule training needed for its parallelism, and
-    inference, being sequential over tokens anyway, gets nothing from keeping. Step through both below.
-  </p>
-
-  <div class="panel" id="app">
-    <div class="tabs" role="tablist" aria-label="Computation mode">
-      <button class="tab" id="tab-training" role="tab" aria-pressed="true">Training &mdash; teacher forcing</button>
-      <button class="tab" id="tab-naive" role="tab" aria-pressed="false">Naive autoregressive inference</button>
-      <button class="tab" id="tab-latent" role="tab" aria-pressed="false">Full-bandwidth (latent feedback)</button>
-    </div>
-
-    <div class="caption" id="caption" aria-live="polite"></div>
-
-    <div class="diagram-scroll">
-      <svg class="diagram" id="svg" viewBox="0 0 644 392" role="img" aria-labelledby="svgTitle">
-        <title id="svgTitle">Grid of transformer layers by token position, showing compute order and the channel carrying information from one decoding step to the next.</title>
-      </svg>
-    </div>
-
-    <div class="legend">
-      <span><i class="sw pending"></i>not yet computed</span>
-      <span><i class="sw active"></i>computing now</span>
-      <span><i class="sw done"></i>computed</span>
-      <span id="legend-discard" hidden><i class="sw discard"></i>computed, then thrown away</span>
-      <span id="legend-fedback" hidden><i class="sw fedback"></i>computed, fed back in</span>
-    </div>
-
-    <div class="stats">
-      <div class="stat"><div class="k mono" id="stat-steps">0 / 0</div><div class="l">sequential steps so far</div></div>
-      <div class="stat"><div class="k mono" id="stat-tokens">0 / 6</div><div class="l">token columns finished</div></div>
-      <div class="stat"><div class="k mono" id="stat-bits">&ndash;</div><div class="l">carried to next token</div></div>
-    </div>
-
-    <div class="controls">
-      <button class="btn" id="btn-reset">Reset</button>
-      <button class="btn" id="btn-back">&larr; Step</button>
-      <button class="btn primary" id="btn-play">Play</button>
-      <button class="btn" id="btn-fwd">Step &rarr;</button>
-      <div class="speed">
-        <label for="speed">speed</label>
-        <input type="range" id="speed" min="1" max="4" step="1" value="2">
+  <div class="layout">
+    <section class="stage" aria-label="Computation grid">
+      <div class="controls">
+        <div class="seg" role="radiogroup" aria-label="Regime">
+          <button role="radio" data-mode="train" aria-checked="true">Training</button>
+          <button role="radio" data-mode="infer" aria-checked="false">Inference</button>
+          <button role="radio" data-mode="latent" aria-checked="false">Latent feedback</button>
+        </div>
+        <button class="btn" id="back" aria-label="Step back">&lsaquo;</button>
+        <button class="btn" id="play">Play</button>
+        <button class="btn" id="fwd" aria-label="Step forward">&rsaquo;</button>
+        <input type="range" id="scrub" min="0" value="0" aria-label="Serial step">
       </div>
-    </div>
+      <p class="readout" id="readout"></p>
+      <svg id="grid" viewBox="0 0 960 520" role="img" aria-label="Grid of hidden states, positions across, layers up"></svg>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--yellow-soft);border-color:var(--yellow)"></i>computing now</span>
+        <span><i class="sw" style="background:var(--blue);border-color:var(--blue)"></i>read directly</span>
+        <span><i class="sw" style="background:var(--blue-soft)"></i>reachable</span>
+        <span><i class="sw" style="background:var(--red-soft);border-color:var(--red)"></i>already computed, out of reach</span>
+        <span><i class="sw" style="background:var(--grey-soft)"></i>computed</span>
+        <span><i class="sw" style="border-style:dashed"></i>not yet computed</span>
+      </div>
+      <div class="stats" style="margin-top:18px">
+        <div class="stat"><div class="v" id="sSteps">0</div><div class="k">serial steps</div></div>
+        <div class="stat blue"><div class="v" id="sReach">&ndash;</div><div class="k">states this cell can reach</div></div>
+        <div class="stat red"><div class="v" id="sRed">&ndash;</div><div class="k">computed but out of reach, this cell</div></div>
+        <div class="stat red"><div class="v" id="sCum">0</div><div class="k">out-of-reach total so far</div></div>
+      </div>
+    </section>
+
+    <aside class="notes" id="notes" aria-live="polite"></aside>
   </div>
+</main>
 
-  <section class="prose">
-    <h2>Why training needs the rule</h2>
-    <p>
-      Write the hidden state of token <code>t</code> at layer <code>&#8467;</code> as <code>h[t,&#8467;]</code>.
-      Training processes a whole sequence with teacher forcing: it runs layer 1 for every position at once, then
-      layer 2 for every position at once, and so on. That parallel sweep is only legal if no layer needs a
-      <em>deeper</em> layer's output from an earlier position that hasn't been computed yet &mdash; formally,
-    </p>
-    <div class="eq">h[t, &#8467;] cannot read h[t&prime;, &#8467;&prime;] &nbsp;for&nbsp; t&prime; &lt; t &nbsp;and&nbsp; &#8467;&prime; &ge; &#8467;</div>
-    <p>
-      the paper's <em>depth-frozen</em> constraint. It's the reason the grid above fills in row by row instead of
-      column by column during training.
-    </p>
-  </section>
-
-  <section class="prose">
-    <h2>Why inference doesn't need it</h2>
-    <p>
-      Generation is already sequential over tokens &mdash; you can't sample token <code>t+1</code> before you
-      know token <code>t</code>. By the time inference starts on a new token, every earlier column in the grid
-      is already sitting there fully computed, top layer included, in the KV cache. Standard decoding still
-      squeezes the handoff to the next token through the sampled token id &mdash; at most
-      <code>log&#8322;|V|</code> bits &mdash; and lets the rest of that finished column evaporate.
-    </p>
-    <div class="quote">
-      "Sequential computation is required only across layers, not across tokens. At decoding time&hellip;
-      generation is already sequential over tokens, so the constraint buys nothing."
-      <cite>Full-Bandwidth Transformer, arXiv:2608.08888</cite>
-    </div>
-    <p>
-      That's the pessimization: inference pays the depth-frozen constraint's cost (recomputing each token's
-      stack from a thin token embedding) without getting its benefit (parallelism across tokens), because
-      inference was never going to be parallel across tokens in the first place.
-    </p>
-  </section>
-
-  <section class="prose">
-    <h2>Widening the channel</h2>
-    <p>
-      The paper's fix, <em>latent feedback</em>, reuses the discarded top-layer state instead of only the
-      sampled token. It fuses the previous top-layer state <code>h<sub>t&minus;1</sub></code> with the new
-      token embedding <code>e<sub>t</sub></code> through a gated linear unit and feeds that fused vector in as
-      the next input &mdash; the violet band in the channel above, riding alongside the token id rather than
-      replacing it:
-    </p>
-    <div class="eq">e<sub>t</sub> &otimes; h<sub>t&minus;1</sub> &nbsp;=&nbsp; W<sup>U</sup>h<sub>t&minus;1</sub> &nbsp;&#8857;&nbsp; &sigma;(W<sup>G</sup>e<sub>t</sub>)</div>
-    <p>
-      No extra transformer-block evaluations per generated token, no change to the KV cache, no change to the
-      language-modeling objective &mdash; just a wider handoff between one decoding step and the next.
-    </p>
-  </section>
-
-  <footer>
-    Unofficial explainer based on <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer (arXiv:2608.08888)</a>.
-    Token counts, layer counts, and the vocabulary size below are illustrative, not from the paper's actual experiments.
-  </footer>
-</div>
+<footer>Illustrative example (8 tokens, 6 layers, a 50k vocabulary) built to match the paper's argument, not its experiments. Equation numbers refer to <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
-(function(){
-  "use strict";
+const T=8, L=6;
+const words=["The","cat","sat","on","the","warm","mat","."];
+const outs =["cat","sat","on","the","warm","mat",".","It"];
+const VOCAB=50000, DMODEL=4096;
+const narrowBits=Math.ceil(Math.log2(VOCAB));
+const wideBits=narrowBits+DMODEL*16;
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById('grid');
+const G={padL:84, top:84, colW:104, cw:46, ch:40, rowH:56};
+const X=t=>G.padL+(t-1)*G.colW+(G.colW-G.cw)/2;
+const Y=l=>G.top+(L-l)*G.rowH;
 
-  var TOKENS = ["The","cat","sat","on","the","mat"];
-  var T = TOKENS.length;
-  var L = 4;
-  var LAYER_NAMES = ["Layer 1","Layer 2","Layer 3","Layer 4"];
-  var VOCAB = 50000;
-  var DMODEL = 4096;
-  var narrowBits = Math.ceil(Math.log2(VOCAB));
-  var wideBits = narrowBits + DMODEL * 16;
+let mode='train', s=0, playing=false, timer=null, hover=null;
 
-  var geo = {
-    marginLeft: 64,
-    marginTop: 24,
-    cellW: 84,
-    cellH: 54,
-    gapX: 12,
-    gapY: 9
-  };
-  geo.gridW = T * geo.cellW + (T - 1) * geo.gapX;
-  geo.gridH = L * geo.cellH + (L - 1) * geo.gapY;
-  geo.colLabelY = geo.marginTop + geo.gridH + 18;
-  geo.laneY = geo.colLabelY + 26;
-  geo.laneLabelY = geo.laneY + 22;
+const NOTES={
+ train:`<h2>Training: one row at a time</h2>
+ <p>Teacher forcing knows every token in advance, so layer &#8467; runs for all ${T} positions at once. The whole sequence costs ${L} serial steps, however long it is.</p>
+ <p>That parallel sweep is only legal if no cell needs a deeper layer's output from an earlier position that hasn't been computed yet &mdash; the paper's <i>depth-frozen</i> constraint:</p>
+ <div class="eq">h[t, &#8467;] cannot read h[t&prime;, &#8467;&prime;] for t&prime; &lt; t and &#8467;&prime; &ge; &#8467;</div>
+ <p>Here the rule is forced: rows above the current one don't exist yet, whoever is asking.</p>`,
+ infer:`<h2>Inference: one column at a time</h2>
+ <p>Decoding can't know token <i>t</i>+1 until token <i>t</i> is sampled, so the grid fills column by column: ${T*L} serial steps.</p>
+ <p>Now, when a cell fires, every deeper state of every earlier token already exists in the KV cache. It still can't read them &mdash; the rule training needed is kept here purely by convention.</p>
+ <p>All that crosses between columns is the sampled token, at most log&#8322;|<i>V</i>| &asymp; ${narrowBits} bits. The top-layer state, a whole <i>D</i>-dimensional vector, is thrown away.</p>
+ <div class="quote">"Sequential computation is required only across layers, not across tokens&hellip; generation is already sequential over tokens, so the constraint buys nothing."<cite>Full-Bandwidth Transformer, arXiv:2608.08888</cite></div>`,
+ latent:`<h2>Latent feedback: widen the channel</h2>
+ <p>The paper's fix feeds the previous top-layer state back in, fused with the sampled token through a gated linear unit:</p>
+ <div class="eq">e<sub>t</sub> &otimes; h<sub>t&minus;1</sub> &nbsp;=&nbsp; W<sup>U</sup>h<sub>t&minus;1</sub> &nbsp;&#8857;&nbsp; &sigma;(W<sup>G</sup>e<sub>t</sub>)</div>
+ <p>Same column order, same KV cache, no extra transformer-block evaluations per token &mdash; just a channel that now carries &asymp;${wideBits.toLocaleString()} bits instead of ${narrowBits}. The bottom of each new token sees the past as the whole stack left it, not just its name.</p>
+ <p>Training this without losing parallelism takes a few extra row-by-row passes &mdash; a stability story for the next visualization.</p>`
+};
 
-  var svgNS = "http://www.w3.org/2000/svg";
-  var svg = document.getElementById("svg");
-  svg.setAttribute("viewBox", "0 0 644 " + (geo.laneLabelY + 14));
-
-  function xFor(col){ return geo.marginLeft + col * (geo.cellW + geo.gapX); }
-  function yFor(row){ return geo.marginTop + (L - 1 - row) * (geo.cellH + geo.gapY); }
-
-  function el(tag, attrs){
-    var n = document.createElementNS(svgNS, tag);
-    for (var k in attrs) n.setAttribute(k, attrs[k]);
-    return n;
+function total(){return mode==='train'?L:T*L}
+function tAt(t,l){ if(mode==='train') return l; return l===0?(t-1)*L:(t-1)*L+l; }
+function currentCell(){
+  if(s<1) return null;
+  if(mode==='train') return {t:T,l:s,row:true};
+  return {t:Math.floor((s-1)/L)+1, l:(s-1)%L+1};
+}
+function direct(f,t,l){ return l===f.l-1 && t<=f.t; }
+function reachable(f,t,l){
+  if(direct(f,t,l)) return true;
+  if(mode==='latent'&&t<f.t) return true;
+  return t<=f.t && l<f.l;
+}
+// A computed cell counts as "out of reach" only if it finished strictly before the
+// focal cell fired (rules out same-row training peers, which are simultaneous, not prior)
+// and it's an earlier position the depth-frozen rule still blocks.
+function outOfReach(f,t,l,time){
+  return t<f.t && tAt(t,l)<time && !reachable(f,t,l);
+}
+function reachCount(f){ return mode==='latent'?(f.t-1)*(L+1)+f.l : f.t*f.l; }
+function redCount(f,time){
+  let c=0;
+  for(let t=1;t<f.t;t++)for(let l=0;l<=L;l++) if(outOfReach(f,t,l,time)) c++;
+  return c;
+}
+function cumRed(upto){
+  let c=0;
+  for(let t=1;t<=T;t++)for(let l=1;l<=L;l++){
+    const time=tAt(t,l);
+    if(time<=upto) c+=redCount({t,l},time);
   }
+  return c;
+}
+function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||svg).appendChild(e);return e}
+function mathLabel(parent,x,y,base,sub,opts={}){
+  const tx=el('text',{x,y,'text-anchor':opts.anchor||'middle','font-size':opts.size||15,fill:opts.fill||'var(--ink)','font-style':'italic'},parent);
+  const a=document.createElementNS(NS,'tspan');a.textContent=base;tx.appendChild(a);
+  if(sub!==undefined){const b=document.createElementNS(NS,'tspan');b.setAttribute('dy','4');b.setAttribute('font-size','0.72em');b.textContent=sub;tx.appendChild(b);}
+  return tx;
+}
 
-  // ---- build static + dynamic svg pieces once ----
-  var cells = []; // cells[col][row]
-  for (var c = 0; c < T; c++){
-    cells.push([]);
-    for (var r = 0; r < L; r++){
-      var rect = el("rect", {
-        class: "cell",
-        x: xFor(c), y: yFor(r),
-        width: geo.cellW, height: geo.cellH,
-        rx: 8
-      });
-      svg.appendChild(rect);
-      cells[c].push(rect);
+function render(){
+  svg.innerHTML='';
+  const cur=currentCell();
+  const focus=hover&&hover.l>0?hover:cur;
+  const time=hover?tAt(hover.t,hover.l):s;
+  const computed=(t,l)=>tAt(t,l)<=time;
+
+  el('text',{x:24,y:Y(L)-30,'font-size':14,fill:'var(--muted)'}).textContent='layer';
+  for(let l=0;l<=L;l++){
+    const t=el('text',{x:G.padL-18,y:Y(l)+G.ch/2+5,'text-anchor':'end','font-size':15,fill:'var(--muted)','font-style':l===L?'italic':'normal'});
+    t.textContent=l===0?'input':(l===L?'L':String(l));
+  }
+  const ax=el('text',{x:X(T)+G.cw,y:Y(0)+G.ch+62,'text-anchor':'end','font-size':14,fill:'var(--muted)'});ax.textContent='position t →';
+
+  if(mode!=='train'){
+    for(let t=1;t<T;t++){
+      if(!computed(t,L)) continue;
+      const x1=X(t)+G.cw, y1=Y(L)+G.ch/2, x2=X(t+1), y2=Y(0)+G.ch/2;
+      const d=`M${x1},${y1} C${x1+44},${y1} ${x2-44},${y2} ${x2},${y2}`;
+      if(mode==='latent') el('path',{d,fill:'none',stroke:'var(--blue)','stroke-width':8,'stroke-opacity':.5,'stroke-linecap':'round'});
+      el('path',{d,fill:'none',stroke:'var(--yellow)','stroke-width':1.4,'stroke-dasharray':'4 4'});
     }
-    var colLabel = el("text", {
-      class: "col-label",
-      x: xFor(c) + geo.cellW / 2, y: geo.colLabelY,
-      "text-anchor": "middle"
-    });
-    colLabel.textContent = TOKENS[c];
-    svg.appendChild(colLabel);
-  }
-  for (var r2 = 0; r2 < L; r2++){
-    var rl = el("text", {
-      class: "row-label",
-      x: geo.marginLeft - 10, y: yFor(r2) + geo.cellH / 2 + 4,
-      "text-anchor": "end"
-    });
-    rl.textContent = LAYER_NAMES[r2];
-    svg.appendChild(rl);
   }
 
-  // feedback channel: one track spanning all tokens, segment pieces per gap
-  var laneX0 = xFor(0) + geo.cellW / 2;
-  var laneX1 = xFor(T - 1) + geo.cellW / 2;
-  svg.appendChild(el("line", {
-    class: "lane-track",
-    x1: laneX0, y1: geo.laneY, x2: laneX1, y2: geo.laneY
-  }));
-  var laneViolet = el("line", {
-    class: "lane-violet", "data-on": "0",
-    x1: laneX0, y1: geo.laneY, x2: laneX0, y2: geo.laneY
-  });
-  var laneAmber = el("line", {
-    class: "lane-amber", "data-on": "0",
-    x1: laneX0, y1: geo.laneY, x2: laneX0, y2: geo.laneY
-  });
-  svg.appendChild(laneViolet);
-  svg.appendChild(laneAmber);
-  var gateLabel = el("text", { class: "gate", "data-on": "0", x: laneX0, y: geo.laneY - 12 });
-  gateLabel.textContent = "⊗ gate";
-  svg.appendChild(gateLabel);
-  var laneLabel = el("text", { class: "lane-label", x: laneX0, y: geo.laneLabelY, "text-anchor": "start" });
-  svg.appendChild(laneLabel);
-
-  // ---- state ----
-  var mode = "training";
-  var step = 2;
-  var playing = false;
-  var timer = null;
-
-  function totalSteps(m){ return m === "training" ? L : T * L; }
-
-  function render(){
-    var n = step;
-    var discardOn = mode === "naive";
-    var fedOn = mode === "latent";
-    document.getElementById("legend-discard").hidden = !discardOn;
-    document.getElementById("legend-fedback").hidden = !fedOn;
-
-    var completedCols, rowsDoneInCurrent, activeCol;
-    if (mode === "training"){
-      completedCols = -1; // unused
-    } else {
-      completedCols = Math.min(Math.floor(n / L), T);
-      rowsDoneInCurrent = n % L;
-      activeCol = completedCols < T ? completedCols : -1;
+  if(focus){
+    const fx=X(focus.t)+G.cw/2, fy=Y(focus.l)+G.ch;
+    for(let t=1;t<=focus.t;t++){
+      el('line',{x1:fx,y1:fy,x2:X(t)+G.cw/2,y2:Y(focus.l-1),stroke:'var(--yellow)','stroke-opacity':.55,'stroke-width':1.2});
     }
-
-    for (var c = 0; c < T; c++){
-      for (var r = 0; r < L; r++){
-        var state, isDiscard = false, isFed = false;
-        if (mode === "training"){
-          state = r < n ? "done" : (r === n ? "active" : "pending");
-        } else {
-          if (c < completedCols) state = "done";
-          else if (c > completedCols) state = "pending";
-          else {
-            state = r < rowsDoneInCurrent ? "done" : (r === rowsDoneInCurrent ? "active" : "pending");
-          }
-          if (state === "done" && r === L - 1){
-            if (discardOn) isDiscard = true;
-            if (fedOn) isFed = true;
-          }
-        }
-        cells[c][r].setAttribute("data-state", state);
-        cells[c][r].setAttribute("data-discard", isDiscard ? "1" : "0");
-        cells[c][r].setAttribute("data-fedback", isFed ? "1" : "0");
-      }
-    }
-
-    // channel lane
-    var filledUpTo; // index of last column index whose *outgoing* segment is filled
-    if (mode === "training"){
-      filledUpTo = T - 1; // ground truth already known end-to-end
-    } else {
-      filledUpTo = completedCols - 1; // columns fully done have delivered their handoff
-    }
-    var xEnd = filledUpTo >= 0 ? xFor(Math.min(filledUpTo + 1, T - 1)) + geo.cellW / 2 : laneX0;
-    if (mode !== "training" && filledUpTo < 0) xEnd = laneX0;
-
-    laneAmber.setAttribute("x2", xEnd);
-    laneAmber.setAttribute("data-on", (mode === "training" || filledUpTo >= 0) ? "1" : "0");
-
-    laneViolet.setAttribute("x2", xEnd);
-    laneViolet.setAttribute("data-on", mode === "latent" && filledUpTo >= 0 ? "1" : "0");
-
-    gateLabel.setAttribute("x", xEnd);
-    gateLabel.setAttribute("data-on", mode === "latent" && filledUpTo >= 0 && filledUpTo < T - 1 ? "1" : "0");
-
-    if (mode === "training"){
-      laneLabel.textContent = "ground-truth tokens — all known upfront, nothing to wait on";
-    } else if (mode === "naive"){
-      laneLabel.textContent = "carries only the sampled token id — ≈" + narrowBits + " bits/step";
-    } else {
-      laneLabel.textContent = "carries the token id + fused top-layer state — ≈" + wideBits.toLocaleString() + " bits/step";
-    }
-
-    // stats
-    var tot = totalSteps(mode);
-    document.getElementById("stat-steps").textContent = n + " / " + tot;
-    if (mode === "training"){
-      document.getElementById("stat-tokens").textContent = T + " (parallel)";
-      document.getElementById("stat-bits").textContent = "n/a — no handoff needed";
-    } else {
-      var finished = Math.max(0, completedCols);
-      document.getElementById("stat-tokens").textContent = finished + " / " + T;
-      document.getElementById("stat-bits").textContent = mode === "naive" ? ("≈" + narrowBits + " bits") : ("≈" + wideBits.toLocaleString() + " bits");
-    }
-
-    document.getElementById("caption").innerHTML = captionFor(mode, n, completedCols, rowsDoneInCurrent);
-
-    document.getElementById("btn-back").disabled = n <= 0;
-    document.getElementById("btn-fwd").disabled = n >= tot;
-    document.getElementById("btn-play").textContent = playing ? "Pause" : "Play";
   }
 
-  function captionFor(m, n, completedCols, rowsDoneInCurrent){
-    if (m === "training"){
-      if (n === 0) return "Layer 1 is about to run for <b>all six tokens at once</b> — that's what \"teacher forcing\" buys you.";
-      if (n >= L) return "All " + L + " layers done. The whole pass took just <b>" + L + " sequential steps</b>, no matter how many tokens were in the batch.";
-      return "Layer " + (n + 1) + " runs for all six tokens simultaneously — step " + (n + 1) + " of " + L + ", independent of sequence length.";
+  for(let t=1;t<=T;t++)for(let l=0;l<=L;l++){
+    const g=el('g',{tabindex:l>0?0:-1,style:'cursor:'+(l>0?'pointer':'default')});
+    let fill='none',stroke='var(--line)',dash='4 3',sw=1;
+    const isComp=computed(t,l);
+    if(isComp){fill='var(--grey-soft)';dash='';}
+    if(focus && isComp){
+      const self=t===focus.t&&l===focus.l;
+      const nowRow=!hover&&cur&&cur.row&&l===cur.l;
+      if(self||nowRow){fill='var(--yellow-soft)';stroke='var(--yellow)';sw=2;}
+      else if(direct(focus,t,l)){fill='var(--blue)';stroke='var(--blue)';}
+      else if(reachable(focus,t,l)){fill='var(--blue-soft)';stroke='var(--blue)';sw=.8;}
+      else if(outOfReach(focus,t,l,time)){fill='var(--red-soft)';stroke='var(--red)';}
     }
-    var col = Math.min(completedCols, T - 1);
-    var tokenWord = TOKENS[col];
-    if (n >= T * L) return "All " + T + " tokens fully decoded. Total sequential steps: <b>" + (T * L) + "</b> (" + T + " tokens × " + L + " layers) — the same total either way.";
-    if (rowsDoneInCurrent === 0 && completedCols > 0){
-      return (m === "naive")
-        ? "Token \"<b>" + tokenWord + "</b>\" starts from scratch, seeded only by the previous token id."
-        : "Token \"<b>" + tokenWord + "</b>\" starts seeded by the previous token id <i>and</i> its fused top-layer state.";
+    el('rect',{x:X(t),y:Y(l),width:G.cw,height:G.ch,rx:4,fill,stroke,'stroke-width':sw,'stroke-dasharray':dash},g);
+    if(l===0 && isComp){
+      const isDirect=focus&&direct(focus,t,0);
+      const c=isDirect?'var(--bg)':'var(--ink)';
+      if(mode==='latent'&&t>1) mathLabel(g,X(t)+G.cw/2,Y(0)+G.ch/2+5,'e⊗h',String(t),{size:13,fill:c});
+      else mathLabel(g,X(t)+G.cw/2,Y(0)+G.ch/2+5,'e',String(t),{size:15,fill:c});
     }
-    if (rowsDoneInCurrent === L - 1){
-      return (m === "naive")
-        ? "Top layer for \"<b>" + tokenWord + "</b>\" just finished. That full hidden state is about to be <b>discarded</b> — only the sampled token id moves on."
-        : "Top layer for \"<b>" + tokenWord + "</b>\" just finished. It gets fused with the next token embedding through the ⊗ gate instead of being thrown away.";
+    if(l>0){
+      g.addEventListener('mouseenter',()=>{hover={t,l};render()});
+      g.addEventListener('mouseleave',()=>{hover=null;render()});
+      g.addEventListener('focus',()=>{hover={t,l};render()});
+      g.addEventListener('blur',()=>{hover=null;render()});
     }
-    return "Token \"<b>" + tokenWord + "</b>\" must finish layer " + rowsDoneInCurrent + " before layer " + (rowsDoneInCurrent + 1) + " can start — this part is inherently sequential either way.";
   }
 
-  function setStep(n){
-    var tot = totalSteps(mode);
-    step = Math.max(0, Math.min(tot, n));
-    render();
+  for(let t=1;t<=T;t++){
+    const inShown=computed(t,0);
+    const tw=el('text',{x:X(t)+G.cw/2,y:Y(0)+G.ch+28,'text-anchor':'middle','font-size':17,fill:inShown?'var(--ink)':'var(--line)'});
+    tw.textContent=inShown?words[t-1]:'?';
+    const outShown=computed(t,L);
+    if(outShown){
+      const to=el('text',{x:X(t)+G.cw/2,y:Y(L)-14,'text-anchor':'middle','font-size':16,fill:mode==='train'?'var(--muted)':'var(--yellow)'});
+      to.textContent=outs[t-1];
+    }
   }
+  const lab=el('text',{x:G.padL-18,y:Y(L)-14,'text-anchor':'end','font-size':14,fill:'var(--muted)'});lab.textContent='predicts';
 
-  function setMode(m){
-    mode = m;
-    document.getElementById("tab-training").setAttribute("aria-pressed", m === "training");
-    document.getElementById("tab-naive").setAttribute("aria-pressed", m === "naive");
-    document.getElementById("tab-latent").setAttribute("aria-pressed", m === "latent");
-    step = m === "training" ? 2 : 5;
-    stopPlaying();
-    render();
+  document.getElementById('sSteps').textContent=`${Math.min(time,total())} / ${total()}`;
+  const ro=document.getElementById('readout');
+  if(focus){
+    document.getElementById('sReach').textContent=reachCount(focus);
+    document.getElementById('sRed').textContent=redCount(focus,time);
+    const who=(!hover&&cur&&cur.row)?`row &#8467; = ${focus.l}, all ${T} positions at once (showing position ${T})`:`h at position ${focus.t}, layer ${focus.l}`;
+    ro.innerHTML=(hover?'The moment this cell fires: ':'Computing ')+who+'.';
+  } else {
+    document.getElementById('sReach').textContent='–';
+    document.getElementById('sRed').textContent='–';
+    ro.textContent='Press Play, or hover any cell to freeze time at the moment it fires.';
   }
+  document.getElementById('sCum').textContent=`${cumRed(time)}${mode==='infer'?' / '+cumRed(T*L):''}`;
+  document.getElementById('scrub').max=total();
+  document.getElementById('scrub').value=s;
+}
 
-  function stopPlaying(){
-    playing = false;
-    if (timer){ clearInterval(timer); timer = null; }
-  }
-
-  function tick(){
-    var tot = totalSteps(mode);
-    if (step >= tot){ stopPlaying(); render(); return; }
-    setStep(step + 1);
-  }
-
-  document.getElementById("tab-training").addEventListener("click", function(){ setMode("training"); });
-  document.getElementById("tab-naive").addEventListener("click", function(){ setMode("naive"); });
-  document.getElementById("tab-latent").addEventListener("click", function(){ setMode("latent"); });
-
-  document.getElementById("btn-reset").addEventListener("click", function(){ stopPlaying(); setStep(0); });
-  document.getElementById("btn-back").addEventListener("click", function(){ stopPlaying(); setStep(step - 1); });
-  document.getElementById("btn-fwd").addEventListener("click", function(){ stopPlaying(); setStep(step + 1); });
-
-  var speedEl = document.getElementById("speed");
-  function intervalMs(){
-    var v = parseInt(speedEl.value, 10);
-    return { 1: 900, 2: 550, 3: 320, 4: 160 }[v] || 550;
-  }
-  document.getElementById("btn-play").addEventListener("click", function(){
-    if (playing){ stopPlaying(); render(); return; }
-    if (step >= totalSteps(mode)) step = 0;
-    playing = true;
-    render();
-    timer = setInterval(tick, intervalMs());
-  });
-  speedEl.addEventListener("input", function(){
-    if (playing){ clearInterval(timer); timer = setInterval(tick, intervalMs()); }
-  });
-
+function setMode(m){
+  mode=m; s=0; hover=null; stop();
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.mode===m)));
+  document.getElementById('notes').innerHTML=NOTES[m]+`<p class="hint">Hover or tab to any cell to see what it can read at the moment it fires. Space plays, arrow keys step.</p>`;
   render();
-})();
+}
+function step(d){ s=Math.max(0,Math.min(total(),s+d)); render(); }
+function stop(){ playing=false; clearInterval(timer); document.getElementById('play').textContent='Play'; }
+function play(){
+  if(s>=total()) s=0;
+  playing=true; document.getElementById('play').textContent='Pause';
+  timer=setInterval(()=>{ if(s>=total()){stop();return;} step(1); }, mode==='train'?750:280);
+}
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+document.getElementById('play').addEventListener('click',()=>playing?stop():play());
+document.getElementById('back').addEventListener('click',()=>{stop();step(-1)});
+document.getElementById('fwd').addEventListener('click',()=>{stop();step(1)});
+document.getElementById('scrub').addEventListener('input',e=>{stop();s=+e.target.value;render()});
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.closest('.seg')) return;
+  if(e.code==='Space'){e.preventDefault();playing?stop():play();}
+  if(e.key==='ArrowRight'){stop();step(1)} if(e.key==='ArrowLeft'){stop();step(-1)}
+});
+setMode('train');
 </script>

@@ -19,14 +19,16 @@ No build step, no dependencies — open any `index.html` directly in a browser.
 
 ## Visualizations
 
-### 01 — Training vs. inference compute order
+### 01 — One grid, two orders
 [`viz/01-training-vs-inference/index.html`](viz/01-training-vs-inference/index.html)
 
-The core distinction the paper's argument turns on:
+The core distinction the paper's argument turns on, laid out as a single grid of
+hidden states `h[t, ℓ]` (token position × layer):
 
 - **Training** sweeps one *layer* at a time across every token in the sequence at
   once (teacher forcing). This is legal only because of the paper's *depth-frozen*
-  constraint: no layer may read a deeper layer's output from an earlier position.
+  constraint: no cell may read a deeper layer's output from an earlier position
+  that hasn't been computed yet.
 - **Naive autoregressive inference** sweeps one *token* at a time through every
   layer, imitating that same constraint — even though inference is already
   sequential over tokens, so the constraint "buys nothing" there. Each finished
@@ -36,9 +38,11 @@ The core distinction the paper's argument turns on:
   top-layer state back in via a gated linear unit, widening the channel between
   decoding steps at no extra sequential cost.
 
-Three animated modes on one grid (tokens × layers), a live "bits carried to the
-next token" readout, and a channel lane under the grid whose width literally
-changes with how much information crosses between steps.
+Hover or tab to any cell to freeze time at the instant it fires and see exactly
+which earlier states it can read (blue), which it reads directly (solid blue),
+and which are already sitting there computed but architecturally out of reach
+(red) — with a live count of how much reachable information gets thrown away,
+per cell and cumulatively.
 
 Live: https://claude.ai/artifact/56qd3QqQL93wk6tqLNJ97d
 
