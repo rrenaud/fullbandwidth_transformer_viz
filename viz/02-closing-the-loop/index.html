@@ -105,9 +105,6 @@ th:first-child,td:first-child{text-align:left}
 thead th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
 tbody th{font-weight:600;text-align:left}
 tbody tr.on{background:var(--yellow-soft)}
-td.resid{white-space:nowrap}
-.bar{display:inline-block;width:46px;height:4px;border-radius:2px;background:var(--grey-soft);vertical-align:middle;margin-right:7px}
-.bar i{display:block;height:100%;min-width:3px;border-radius:2px;background:var(--red)}
 td.exact{color:var(--blue)}
 
 footer{max-width:1180px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
@@ -150,9 +147,9 @@ footer a{color:inherit}
         <div class="readout" id="readout"></div>
       </div>
       <div>
-        <h2>Convergence</h2>
+        <h2>Exact prefix</h2>
         <table>
-          <thead><tr><th>Pass</th><th>Exact&nbsp;through</th><th>Max residual</th></tr></thead>
+          <thead><tr><th>Pass</th><th>Exact&nbsp;through</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -168,7 +165,7 @@ footer a{color:inherit}
   </div>
 </main>
 
-<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers, contraction &rho;&nbsp;=&nbsp;0.4) &mdash; residuals stand in for &Vert;z<sup>(k)</sup>&minus;z<sup>(k&minus;1)</sup>&Vert;, they are not measurements. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>z</i><sub>4</sub> and the <i>z</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, MAXP=4, RHO=0.4;
@@ -199,13 +196,15 @@ const vbH=()=>Y(1,0)+CH+36;
 const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
 
 // err[p][t]: how far position t's states in pass p still sit from the fixed point.
-// Pass 1 has no feedback at all, so every position past the first starts wrong;
-// after that each pass inherits the previous pass's error from one position back,
-// damped by the contraction factor. Hence the exact prefix growing one token per pass.
+// Pass 1 has no feedback at all, so every position past the first starts wrong; after
+// that each pass inherits the previous pass's error from one position back, damped by
+// a contraction factor. The [p-1][t-1] index is the architecture talking, and it is
+// what makes the exact prefix grow one token per pass. RHO is not: it is a made-up
+// rate, so this drives nothing but how quickly the stale tint fades, and no number
+// off it is ever shown - a reader would take three decimals for a measurement.
 const err={};
 err[1]=Array.from({length:T+1},(_,t)=>t<=1?0:1);
 for(let p=2;p<=MAXP;p++) err[p]=Array.from({length:T+1},(_,t)=>t<=1?0:RHO*err[p-1][t-1]);
-const maxResid=p=>Math.max(...err[p].slice(1));
 const exactThrough=p=>{let n=0;for(let t=1;t<=T;t++){if(err[p][t]>0)break;n=t;}return n;};
 
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
@@ -346,16 +345,12 @@ function drawBlock(p,s,now){
   }
 }
 
-function fmt(v){ return v>=1?'1.000':v.toFixed(3); }
-
 function drawTable(now){
   tbody.innerHTML='';
   for(let p=1;p<=passes;p++){
     const tr=document.createElement('tr');
     if(now&&now.p===p) tr.className='on';
-    const r=maxResid(p);
-    tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`+
-      `<td class="resid"><span class="bar"><i style="width:${(r*100).toFixed(1)}%"></i></span>${fmt(r)}</td>`;
+    tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`;
     tbody.appendChild(tr);
   }
   costnote.textContent=`${passes}× the forward work per step here`;
@@ -365,7 +360,7 @@ function drawReadout(now){
   if(hover&&hover.kind==='latent'){
     const {p,t}=hover;
     const e=err[p][t];
-    const state=e===0?'already at the fixed point':`still ${fmt(e)} away from the fixed point`;
+    const state=e===0?'already at the fixed point':'not yet at the fixed point';
     const dot=p<passes?`<span style="color:${wire(t)}">\u25CF</span> `:'';
     readout.innerHTML=p<passes
       ? `${dot}<b>z<sub>${t}</sub></b> from pass ${p} — ${state} — steps up into <b>position ${t+1}</b>'s input in pass ${p+1}, one column to the right of where it left.`
@@ -377,7 +372,7 @@ function drawReadout(now){
     const e=err[p][t];
     readout.innerHTML=`Pass ${p} · position ${t} · layer ${l===0?'in':l} — `+
       (e===0?`<span style="color:var(--blue)">exact</span>: every latent it depends on had converged before this pass began.`
-            :`carrying a residual of ${fmt(e)}, inherited from the stale <i>z</i><sub>${t-1}</sub> it was fed.`);
+            :`still off the fixed point, inherited from the stale <i>z</i><sub>${t-1}</sub> it was fed \u2014 fainter each pass as the feedback map contracts.`);
     return;
   }
   if(!now){ readout.innerHTML=`<span class="dim">Press play. Each pass sweeps layer by layer, then hands its whole latent row back to the start.</span>`; return; }

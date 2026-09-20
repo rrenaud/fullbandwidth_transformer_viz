@@ -59,8 +59,11 @@ Three things fall out of that, and the page animates all three:
 - **The loop closes one token per pass.** Position 1 needs no latent, so it is exact
   from pass 1; its latent makes position 2 exact in pass 2, and so on. The exact prefix
   advances one token per pass — a visible staircase up the stack.
-- **Past that wavefront the error only contracts**, by a factor ρ per pass, which is why
-  a handful of passes stands in for the `T` it would take to converge exactly.
+- **Past that wavefront the error only contracts**, which is why a handful of passes
+  stands in for the `T` it would take to converge exactly. The page shows this as a
+  stale tint that fades pass by pass, and shows no number for it: which positions are
+  exact follows from the architecture, but any rate of contraction would be invented,
+  and an invented rate printed to three decimals reads as a measurement.
 - **Inference pays none of it.** Decoding is already sequential, so `z[t-1]` is sitting
   there when step `t` starts. The iteration is a training-time cost — `k`× the forward
   work — buying a channel that is free at generation time.
@@ -71,13 +74,16 @@ ramp, slid one column to the right. (Nine smooth steps can't carry identity by c
 alone, so the `z` label at the receiving end does that; the ramp carries the ordering.)
 
 Hover or tab any top-row cell to follow one latent around the loop into the position it
-lands in; the pass selector trades passes against the residual left on the table (at one
-pass, the feedback path is gone and the page shows the vanilla model it degenerates to).
+lands in; the pass selector trades passes against how much of the sequence is still
+stale (at one pass, the feedback path is gone and the page shows the vanilla model it
+degenerates to).
 
 ## Roadmap ideas
 
 - Animate real attention patterns / KV-cache growth alongside the depth axis.
 - A version driven by activations from an actual small model checkpoint instead of
   illustrative placeholder values.
-- The instability story from the paper's Figure 3: what the residual curve looks like
-  when the learned feedback map does *not* contract.
+- The instability story from the paper's Figure 3: what happens when the learned
+  feedback map does *not* contract. Worth doing with real residual measurements, or
+  with the contraction factor as a control the reader drives — not as a fixed constant
+  presented as data.
