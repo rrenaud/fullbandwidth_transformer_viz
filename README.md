@@ -48,7 +48,7 @@ reachable information is going unused right now.
 ### 02 — Closing the loop
 
 Full-bandwidth *training*, unrolled. Teacher forcing runs every position at once, but
-position `t` wants `z[t-1]`, the previous position's **top-layer** latent — which does
+position `t` wants `h[t-1]`, the previous position's **top-layer** latent — which does
 not exist until the pass is over. So each pass is run against the *previous* pass's
 latents, and the pass is run again. The passes climb the figure — **pass 1 is at the
 foot** — so a pass's latent row sits directly beneath the next pass's input row, and the
@@ -64,22 +64,34 @@ Three things fall out of that, and the page animates all three:
   stale tint that fades pass by pass, and shows no number for it: which positions are
   exact follows from the architecture, but any rate of contraction would be invented,
   and an invented rate printed to three decimals reads as a measurement.
-- **Inference pays none of it.** Decoding is already sequential, so `z[t-1]` is sitting
-  there when step `t` starts. The iteration is a training-time cost — `k`× the forward
-  work of an ordinary training step — buying a channel that is free at generation time.
-- **Every pass is scored.** Each pass's top row is unembedded and compared against the
-  same targets, and the losses are summed — so the model is trained across the whole
-  range of latent quality it will ever be handed, from no feedback at all in pass 1 to
-  nearly converged in pass 3. The latents are usually detached at each handoff, so a
-  pass is backpropagated through its own forward and no further.
+- **Inference pays none of it.** Decoding is already sequential, so `h[t-1]` is sitting
+  there when step `t` starts. A `k`-pass batch costs roughly `k`× ordinary teacher
+  forcing, but the passes are *scheduled* — the paper's runs are 75% single-pass, 22%
+  two-pass, 3% three-pass, introduced midway through training — so the average overhead
+  is nearer 1.3×, and the three-pass batch drawn here is the rare one.
+- **Every pass is scored**, per the paper's objective: the first term is the ordinary
+  single-pass loss on plain embeddings, and the feedback passes are averaged and weighted
+  by λ, giving `L₁ + λ(L₂ + L₃)/2` at three passes. So the model is trained across the
+  whole range of latent quality it will be handed, from no feedback at all in pass 1 to
+  nearly converged in pass 3.
+- **Nothing is detached.** "We do not detach the gradient, so the loss from later passes
+  backpropagates into earlier passes' latent states." The backward pass runs the whole
+  height of the figure — it is one graph, not three.
 
 Two things the diagram used to leave implicit are now drawn. The sequence enters at the
 foot and the targets leave at the head; every latent row carries a tick up into the loss,
 so a pass both hands its latents on *and* gets scored, and the head of the figure spells
 out the targets all three are scored against. And each wire lands on a ⊕ rather than an
-arrowhead, with a side inset opening up one input cell: the latent is *fused into* the
-token embedding through a gated linear unit rather than replacing it, which is also why
-a zero latent (pass 1) leaves the vanilla input untouched.
+arrowhead, with a side inset opening up one input cell — and note which way round the
+paper puts it: `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`, so the latent is the *value*
+and the token embedding enters only as a multiplicative gate. It is a product, not a sum,
+which is why pass 1 runs as the plain single-pass objective rather than by feeding a zero
+latent through the gate — that would zero the input outright.
+
+One claim on the page is mine rather than the paper's: the exact prefix. It follows from
+the update rule (position 1 is fed plain `e_1` in every pass, so each pass pins one more
+position), but the paper presents multi-pass as an approximation and does not analyse it
+that way. The page says so where it makes the claim.
 
 Each wire is coloured by the *source* position it carries, and the same colour caps the
 latent it leaves and labels the input it joins — so the whole ribbon is visibly the same
