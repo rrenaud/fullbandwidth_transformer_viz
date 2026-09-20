@@ -257,10 +257,13 @@ function buildPanel(cfg){
         else mathLabel(g,X(t)+G.cw/2,Y(0)+G.ch/2+5,'e',String(t),{size:15,fill:c});
       }
       if(l>0){
-        g.addEventListener('mouseenter',()=>{hover={t,l};render()});
-        g.addEventListener('mouseleave',()=>{hover=null;render()});
-        g.addEventListener('focus',()=>{hover={t,l};render()});
-        g.addEventListener('blur',()=>{hover=null;render()});
+        // Ignore hover while playing: render() rebuilds every cell each tick, so a
+        // stationary mouse never gets a fresh mouseenter/mouseleave to clear a stale
+        // hover, which would otherwise freeze the view on that cell forever.
+        g.addEventListener('mouseenter',()=>{if(!playing){hover={t,l};render();}});
+        g.addEventListener('mouseleave',()=>{if(!playing){hover=null;render();}});
+        g.addEventListener('focus',()=>{if(!playing){hover={t,l};render();}});
+        g.addEventListener('blur',()=>{if(!playing){hover=null;render();}});
       }
     }
 
@@ -291,9 +294,10 @@ function buildPanel(cfg){
     playBtn.textContent=playing?'Pause':'Play';
   }
 
-  function step(d){ s=Math.max(0,Math.min(total(mode),s+d)); render(); }
+  function step(d){ hover=null; s=Math.max(0,Math.min(total(mode),s+d)); render(); }
   function stop(){ playing=false; clearInterval(timer); timer=null; render(); }
   function play(){
+    hover=null;
     if(s>=total(mode)) s=0;
     playing=true;
     render();
