@@ -47,11 +47,8 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 
 .panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px}
 .panel{border:1px solid var(--line);border-radius:8px;padding:14px 16px 12px}
-.panel h2{font-weight:600;font-size:15px;margin:0 0 2px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.panel h2 .tag{font-weight:400;font-style:italic;font-size:12.5px;color:var(--muted)}
-.panel svg{width:100%;height:auto;display:block;margin:4px 0 8px}
-.readout{min-height:1.3em;margin:0 0 8px;font-size:13.5px;color:var(--muted)}
-.readout b{color:var(--ink);font-weight:600}
+.panel h2{font-weight:600;font-size:15px;margin:0 0 6px}
+.panel svg{width:100%;height:auto;display:block}
 
 .stattable{width:100%;border-collapse:collapse;margin-top:22px;font-size:14px}
 .stattable th,.stattable td{padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
@@ -152,9 +149,9 @@ function mathLabel(parent,x,y,base,sub,opts={}){
 }
 
 const CONFIG=[
-  {mode:'train',  title:'Training',       tag:`${L} steps &middot; ${T} positions at once`},
-  {mode:'infer',  title:'Inference',      tag:`${T*L} steps &middot; one position at a time`},
-  {mode:'latent', title:'Latent feedback', tag:`${T*L} steps &middot; nothing discarded`},
+  {mode:'train',  title:'Training'},
+  {mode:'infer',  title:'Inference'},
+  {mode:'latent', title:'Latent feedback'},
 ];
 const GLOBAL_TOTAL=Math.max(...CONFIG.map(c=>total(c.mode)));
 const TICK_MS=260;
@@ -184,12 +181,10 @@ function buildPanel(cfg){
   const root=document.createElement('section');
   root.className='panel';
   root.innerHTML=`
-    <h2>${cfg.title} <span class="tag">${cfg.tag}</span></h2>
-    <p class="readout"></p>
+    <h2>${cfg.title}</h2>
     <svg viewBox="0 0 ${VB_W} ${VB_H}" role="img" aria-label="Grid of hidden states for ${cfg.title}, positions across, layers up"></svg>`;
 
   const svg=root.querySelector('svg');
-  const readoutEl=root.querySelector('.readout');
 
   function render(){
     const s=Math.min(tick,total(mode));
@@ -269,12 +264,9 @@ function buildPanel(cfg){
     if(focus){
       out.reach.textContent=reachCount(mode,focus);
       out.red.textContent=redCount(mode,focus,time);
-      const who=(!hoverCell&&cur&&cur.row)?`row &#8467;=${focus.l}, all ${T} at once`:`t=${focus.t}, &#8467;=${focus.l}`;
-      readoutEl.innerHTML=(hoverCell?'frozen: ':'computing ')+'<b>'+who+'</b>';
     } else {
       out.reach.textContent='–';
       out.red.textContent='–';
-      readoutEl.textContent='hover any cell to freeze it';
     }
     out.cum.textContent=`${cumRed(mode,time)}`;
   }
