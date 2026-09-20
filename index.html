@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Full-Bandwidth Transformer Visualizations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAF7; --ink:#1B1B1B; --muted:#6B6B6B; --line:#CFCFCA; --blue:#1F7FA6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#000; --ink:#ECECEC; --muted:#9A9A9A; --line:#3A3A3A; --blue:#58C4DD; }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"STIX Two Text","Times New Roman",Georgia,serif;
+    font-size:18px; line-height:1.55;
+  }
+  main{max-width:640px; margin:0 auto; padding:56px 20px 64px}
+  h1{font-weight:400; font-size:clamp(28px,4.4vw,40px); line-height:1.15; margin:0 0 14px}
+  p.lede{color:var(--muted); max-width:56ch; margin:0 0 36px; font-size:18px}
+  p.lede a{color:inherit}
+  ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  li{border:1px solid var(--line); border-radius:8px}
+  li a{
+    display:block; padding:16px 18px; text-decoration:none; color:var(--ink);
+  }
+  li .name{font-weight:600; font-size:17px}
+  li .desc{color:var(--muted); font-size:15px; margin-top:4px}
+  li a:hover{background:rgba(31,127,166,.06)}
+  footer{max-width:640px; margin:40px auto 0; padding:20px 20px 0; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted)}
+  footer a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+  <h1>Full-Bandwidth Transformer</h1>
+  <p class="lede">Interactive explainers built around <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer</a> (arXiv:2608.08888) &mdash; why autoregressive transformers get full bandwidth across tokens but only a narrow, discrete channel across depth.</p>
+  <ul>
+    <li>
+      <a href="viz/01-training-vs-inference/">
+        <div class="name">One grid, two orders</div>
+        <div class="desc">Training fills the token&times;layer grid one row at a time; inference fills it one column at a time. Hover any cell to see what it can and can't read.</div>
+      </a>
+    </li>
+  </ul>
+  <footer>Source on <a href="https://github.com/rrenaud/fullbandwidth_transformer_viz" target="_blank" rel="noopener">GitHub</a>.</footer>
+</main>
+</body>
+</html>
