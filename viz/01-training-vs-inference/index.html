@@ -89,7 +89,7 @@ footer a{color:inherit}
 
   <table class="stattable">
     <thead>
-      <tr><th>Regime</th><th>Steps</th><th>Reach</th><th>Blocked, total</th></tr>
+      <tr><th>Regime</th><th>Steps</th><th>Reach</th><th>Available, unused</th></tr>
     </thead>
     <tbody id="stattbody"></tbody>
   </table>
@@ -127,17 +127,11 @@ function outOfReach(mode,f,t,l,time){
   return t<f.t && tAt(mode,t,l)<time && !reachable(mode,f,t,l);
 }
 function reachCount(mode,f){ return mode==='latent'?(f.t-1)*(L+1)+f.l : f.t*f.l; }
-function redCount(mode,f,time){
+// How many already-computed states exist right now that this cell is barred
+// from reading - a snapshot, not a running total across the whole trajectory.
+function unusedCount(mode,f,time){
   let c=0;
   for(let t=1;t<f.t;t++)for(let l=0;l<=L;l++) if(outOfReach(mode,f,t,l,time)) c++;
-  return c;
-}
-function cumRed(mode,upto){
-  let c=0;
-  for(let t=1;t<=T;t++)for(let l=1;l<=L;l++){
-    const time=tAt(mode,t,l);
-    if(time<=upto) c+=redCount(mode,{t,l},time);
-  }
   return c;
 }
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
@@ -171,12 +165,12 @@ const stattbody=document.getElementById('stattbody');
 const statOut={};
 CONFIG.forEach(cfg=>{
   const tr=document.createElement('tr');
-  tr.innerHTML=`<th>${cfg.title}</th><td data-f="steps"></td><td class="blue" data-f="reach"></td><td class="red" data-f="cum"></td>`;
+  tr.innerHTML=`<th>${cfg.title}</th><td data-f="steps"></td><td class="blue" data-f="reach"></td><td class="red" data-f="unused"></td>`;
   stattbody.appendChild(tr);
   statOut[cfg.mode]={
     steps: tr.querySelector('[data-f="steps"]'),
     reach: tr.querySelector('[data-f="reach"]'),
-    cum: tr.querySelector('[data-f="cum"]'),
+    unused: tr.querySelector('[data-f="unused"]'),
   };
 });
 
@@ -269,7 +263,7 @@ function buildPanel(cfg){
     out.reach.textContent=focus?reachCount(mode,focus):'–';
     // Training and latent feedback never leave anything out of reach - only
     // naive inference does - so show a dash rather than a permanent zero.
-    out.cum.textContent=mode==='infer'?`${cumRed(mode,time)}`:'–';
+    out.unused.textContent=(focus&&mode==='infer')?`${unusedCount(mode,focus,time)}`:'–';
   }
 
   render();
