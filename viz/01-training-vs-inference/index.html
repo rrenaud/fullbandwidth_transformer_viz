@@ -53,10 +53,14 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .readout{min-height:1.3em;margin:0 0 8px;font-size:13.5px;color:var(--muted)}
 .readout b{color:var(--ink);font-weight:600}
 
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border-top:1px solid var(--line);padding-top:8px}
-.stat .v{font-size:17px;line-height:1.1;font-variant-numeric:tabular-nums}
-.stat .k{font-size:10.5px;color:var(--muted);line-height:1.25;text-transform:uppercase;letter-spacing:.02em}
-.stat.red .v{color:var(--red)} .stat.blue .v{color:var(--blue)}
+.stattable{width:100%;border-collapse:collapse;margin-top:22px;font-size:14px}
+.stattable th,.stattable td{padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+.stattable th:first-child,.stattable td:first-child{text-align:left}
+.stattable thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
+.stattable tbody th{font-weight:600;text-align:left}
+.stattable tbody tr:hover{background:var(--grey-soft)}
+.stattable td.red{color:var(--red)}
+.stattable td.blue{color:var(--blue)}
 
 footer{max-width:1440px;margin:24px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
 footer a{color:inherit}
@@ -85,6 +89,13 @@ footer a{color:inherit}
 
 <main>
   <div class="panels" id="panels"></div>
+
+  <table class="stattable">
+    <thead>
+      <tr><th>Regime</th><th>Steps</th><th>Reach</th><th>Blocked, cell</th><th>Blocked, total</th></tr>
+    </thead>
+    <tbody id="stattbody"></tbody>
+  </table>
 </main>
 
 <footer>One grid of hidden states <i>h[t,&#8467;]</i>, filled in a different order per regime. Hover or tab any cell to freeze time at the moment it fires. Illustrative (8 tokens, 6 layers) &mdash; <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
@@ -149,39 +160,43 @@ const GLOBAL_TOTAL=Math.max(...CONFIG.map(c=>total(c.mode)));
 const TICK_MS=260;
 
 let tick=0, playing=false, timer=null;
+// Shared across all panels: hovering a cell in any grid previews that same (t,l)
+// coordinate in every other grid too, each under its own regime's rules.
+let hoverCell=null;
+
+const stattbody=document.getElementById('stattbody');
+const statOut={};
+CONFIG.forEach(cfg=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<th>${cfg.title}</th><td data-f="steps"></td><td class="blue" data-f="reach"></td><td class="red" data-f="red"></td><td class="red" data-f="cum"></td>`;
+  stattbody.appendChild(tr);
+  statOut[cfg.mode]={
+    steps: tr.querySelector('[data-f="steps"]'),
+    reach: tr.querySelector('[data-f="reach"]'),
+    red: tr.querySelector('[data-f="red"]'),
+    cum: tr.querySelector('[data-f="cum"]'),
+  };
+});
 
 function buildPanel(cfg){
   const {mode}=cfg;
+  const out=statOut[mode];
   const root=document.createElement('section');
   root.className='panel';
   root.innerHTML=`
     <h2>${cfg.title} <span class="tag">${cfg.tag}</span></h2>
     <p class="readout"></p>
-    <svg viewBox="0 0 ${VB_W} ${VB_H}" role="img" aria-label="Grid of hidden states for ${cfg.title}, positions across, layers up"></svg>
-    <div class="stats">
-      <div class="stat"><div class="v" data-out="steps">0</div><div class="k">steps</div></div>
-      <div class="stat blue"><div class="v" data-out="reach">&ndash;</div><div class="k">reach</div></div>
-      <div class="stat red"><div class="v" data-out="red">&ndash;</div><div class="k">blocked, cell</div></div>
-      <div class="stat red"><div class="v" data-out="cum">0</div><div class="k">blocked, total</div></div>
-    </div>`;
+    <svg viewBox="0 0 ${VB_W} ${VB_H}" role="img" aria-label="Grid of hidden states for ${cfg.title}, positions across, layers up"></svg>`;
 
   const svg=root.querySelector('svg');
   const readoutEl=root.querySelector('.readout');
-  const out={
-    steps: root.querySelector('[data-out="steps"]'),
-    reach: root.querySelector('[data-out="reach"]'),
-    red: root.querySelector('[data-out="red"]'),
-    cum: root.querySelector('[data-out="cum"]'),
-  };
-
-  let hover=null;
 
   function render(){
     const s=Math.min(tick,total(mode));
     svg.innerHTML='';
     const cur=currentCell(mode,s);
-    const focus=hover&&hover.l>0?hover:cur;
-    const time=hover?tAt(mode,hover.t,hover.l):s;
+    const focus=hoverCell&&hoverCell.l>0?hoverCell:cur;
+    const time=hoverCell?tAt(mode,hoverCell.t,hoverCell.l):s;
     const computed=(t,l)=>tAt(mode,t,l)<=time;
 
     for(let l=0;l<=L;l++){
@@ -213,13 +228,13 @@ function buildPanel(cfg){
       if(isComp){fill='var(--grey-soft)';dash='';}
       if(focus && isComp){
         const self=t===focus.t&&l===focus.l;
-        const nowRow=!hover&&cur&&cur.row&&l===cur.l;
+        const nowRow=!hoverCell&&cur&&cur.row&&l===cur.l;
         if(self||nowRow){fill='var(--yellow-soft)';stroke='var(--yellow)';sw=1.75;}
         else if(direct(focus,t,l)){fill='var(--blue)';stroke='var(--blue)';}
         else if(reachable(mode,focus,t,l)){fill='var(--blue-soft)';stroke='var(--blue)';sw=.75;}
         else if(outOfReach(mode,focus,t,l,time)){fill='var(--red-soft)';stroke='var(--red)';}
       }
-      el('rect',{x:X(t),y:Y(l),width:G.cw,height:G.ch,rx:3,fill,stroke,'stroke-width':sw,'stroke-dasharray':dash},g);
+      el('rect',{x:X(t),y:Y(l),width:G.cw,height:G.ch,rx:3,fill,stroke,'stroke-width':sw,'stroke-dasharray':dash,'pointer-events':'all'},g);
       if(l===0 && isComp){
         const isDirect=focus&&direct(focus,t,0);
         const c=isDirect?'var(--bg)':'var(--ink)';
@@ -227,13 +242,15 @@ function buildPanel(cfg){
         else mathLabel(g,X(t)+G.cw/2,Y(0)+G.ch/2+4,'e',String(t),{size:10.5,fill:c});
       }
       if(l>0){
-        // Ignore hover while playing: render() rebuilds every cell each tick, so a
-        // stationary mouse never gets a fresh mouseenter/mouseleave to clear a stale
-        // hover, which would otherwise freeze the view on that cell forever.
-        g.addEventListener('mouseenter',()=>{if(!playing){hover={t,l};render();}});
-        g.addEventListener('mouseleave',()=>{if(!playing){hover=null;render();}});
-        g.addEventListener('focus',()=>{if(!playing){hover={t,l};render();}});
-        g.addEventListener('blur',()=>{if(!playing){hover=null;render();}});
+        // Hover is shared across all three panels (see hoverCell above), and pointer-events
+        // is forced on so even an unpainted (not-yet-computed) cell can be hovered to preview
+        // it. Ignore hover while playing: render() rebuilds every cell each tick, so a
+        // stationary mouse never gets a fresh mouseenter/mouseleave to clear a stale hover,
+        // which would otherwise freeze the view on that cell forever.
+        g.addEventListener('mouseenter',()=>{if(!playing){hoverCell={t,l};renderPanels();}});
+        g.addEventListener('mouseleave',()=>{if(!playing){hoverCell=null;renderPanels();}});
+        g.addEventListener('focus',()=>{if(!playing){hoverCell={t,l};renderPanels();}});
+        g.addEventListener('blur',()=>{if(!playing){hoverCell=null;renderPanels();}});
       }
     }
 
@@ -252,8 +269,8 @@ function buildPanel(cfg){
     if(focus){
       out.reach.textContent=reachCount(mode,focus);
       out.red.textContent=redCount(mode,focus,time);
-      const who=(!hover&&cur&&cur.row)?`row &#8467;=${focus.l}, all ${T} at once`:`t=${focus.t}, &#8467;=${focus.l}`;
-      readoutEl.innerHTML=(hover?'frozen: ':'computing ')+'<b>'+who+'</b>';
+      const who=(!hoverCell&&cur&&cur.row)?`row &#8467;=${focus.l}, all ${T} at once`:`t=${focus.t}, &#8467;=${focus.l}`;
+      readoutEl.innerHTML=(hoverCell?'frozen: ':'computing ')+'<b>'+who+'</b>';
     } else {
       out.reach.textContent='–';
       out.red.textContent='–';
@@ -262,10 +279,8 @@ function buildPanel(cfg){
     out.cum.textContent=`${cumRed(mode,time)}`;
   }
 
-  function clearHover(){ hover=null; }
-
   render();
-  return {root, render, clearHover};
+  return {root, render};
 }
 
 const container=document.getElementById('panels');
@@ -278,25 +293,26 @@ const panels=CONFIG.map(cfg=>{
 const playBtn=document.getElementById('play');
 const tickread=document.getElementById('tickread');
 
+function renderPanels(){ panels.forEach(p=>p.render()); }
 function renderAll(){
-  panels.forEach(p=>p.render());
+  renderPanels();
   tickread.textContent=`${Math.min(tick,GLOBAL_TOTAL)} / ${GLOBAL_TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
 }
 function globalStep(d){
-  panels.forEach(p=>p.clearHover());
+  hoverCell=null;
   tick=Math.max(0,Math.min(GLOBAL_TOTAL,tick+d));
   renderAll();
 }
 function globalStop(){ playing=false; clearInterval(timer); timer=null; renderAll(); }
 function globalPlay(){
-  panels.forEach(p=>p.clearHover());
+  hoverCell=null;
   if(tick>=GLOBAL_TOTAL) tick=0;
   playing=true;
   renderAll();
   timer=setInterval(()=>{ if(tick>=GLOBAL_TOTAL){globalStop();return;} globalStep(1); }, TICK_MS);
 }
-function globalReset(){ globalStop(); tick=0; panels.forEach(p=>p.clearHover()); renderAll(); }
+function globalReset(){ globalStop(); tick=0; hoverCell=null; renderAll(); }
 
 document.getElementById('back').addEventListener('click',()=>{globalStop();globalStep(-1)});
 document.getElementById('fwd').addEventListener('click',()=>{globalStop();globalStep(1)});
