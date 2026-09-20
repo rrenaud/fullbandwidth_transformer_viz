@@ -155,8 +155,14 @@ const CONFIG=[
 ];
 const GLOBAL_TOTAL=Math.max(...CONFIG.map(c=>total(c.mode)));
 const TICK_MS=260;
+// Training has far fewer steps than inference/latent (L vs T*L), so during
+// autoplay it only advances one step for every TRAIN_SLOWDOWN ticks of the
+// shared clock - each of its steps then dwells on screen as long as several
+// inference steps, instead of the whole regime flashing by in an instant.
+// Manual step/back moves every panel by exactly one step regardless.
+const TRAIN_SLOWDOWN=Math.round(GLOBAL_TOTAL/L);
 
-let tick=0, playing=false, timer=null;
+let tick=0, trainTick=0, playFireCount=0, playing=false, timer=null;
 // Shared across all panels: hovering a cell in any grid previews that same (t,l)
 // coordinate in every other grid too, each under its own regime's rules.
 let hoverCell=null;
@@ -187,7 +193,7 @@ function buildPanel(cfg){
   const svg=root.querySelector('svg');
 
   function render(){
-    const s=Math.min(tick,total(mode));
+    const s=Math.min(mode==='train'?trainTick:tick,total(mode));
     svg.innerHTML='';
     const cur=currentCell(mode,s);
     const focus=hoverCell&&hoverCell.l>0?hoverCell:cur;
@@ -294,17 +300,25 @@ function renderAll(){
 function globalStep(d){
   hoverCell=null;
   tick=Math.max(0,Math.min(GLOBAL_TOTAL,tick+d));
+  trainTick=Math.max(0,Math.min(L,trainTick+d));
   renderAll();
 }
 function globalStop(){ playing=false; clearInterval(timer); timer=null; renderAll(); }
 function globalPlay(){
   hoverCell=null;
-  if(tick>=GLOBAL_TOTAL) tick=0;
+  if(tick>=GLOBAL_TOTAL){ tick=0; trainTick=0; }
   playing=true;
+  playFireCount=0;
   renderAll();
-  timer=setInterval(()=>{ if(tick>=GLOBAL_TOTAL){globalStop();return;} globalStep(1); }, TICK_MS);
+  timer=setInterval(()=>{
+    if(tick>=GLOBAL_TOTAL){ globalStop(); return; }
+    tick=Math.min(GLOBAL_TOTAL,tick+1);
+    playFireCount++;
+    if(playFireCount%TRAIN_SLOWDOWN===0) trainTick=Math.min(L,trainTick+1);
+    renderAll();
+  }, TICK_MS);
 }
-function globalReset(){ globalStop(); tick=0; hoverCell=null; renderAll(); }
+function globalReset(){ globalStop(); tick=0; trainTick=0; hoverCell=null; renderAll(); }
 
 document.getElementById('back').addEventListener('click',()=>{globalStop();globalStep(-1)});
 document.getElementById('fwd').addEventListener('click',()=>{globalStop();globalStep(1)});
