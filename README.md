@@ -88,6 +88,13 @@ and the token embedding enters only as a multiplicative gate. It is a product, n
 which is why pass 1 runs as the plain single-pass objective rather than by feeding a zero
 latent through the gate — that would zero the input outright.
 
+The animation runs both halves of a training step. The forward half fills pass 1, then
+2, then 3, one layer at a time. The backward half then walks back down: because nothing
+is detached, it is a single graph over the whole figure, so the gradient descends every
+layer of pass 3, crosses the handoff wires into pass 2's latent row, descends again, and
+leaves at the foot. A green trail in the gutter marks the rows it has come through, so a
+paused figure shows how far it reached rather than only where it is.
+
 One claim on the page is mine rather than the paper's: the exact prefix. It follows from
 the update rule (position 1 is fed plain `e_1` in every pass, so each pass pins one more
 position), but the paper presents multi-pass as an approximation and does not analyse it
