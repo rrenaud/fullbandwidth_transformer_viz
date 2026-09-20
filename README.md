@@ -38,13 +38,14 @@ hidden states `h[t, ℓ]` (token position × layer):
   top-layer state back in via a gated linear unit, widening the channel between
   decoding steps at no extra sequential cost.
 
-Hover or tab to any cell to freeze time at the instant it fires and see exactly
-which earlier states it can read (blue), which it reads directly (solid blue),
-and which are already sitting there computed but architecturally out of reach
-(red) — with a live count of how much reachable information gets thrown away,
-per cell and cumulatively.
+Hover or tab to any cell — in any of the three panels at once — to freeze time
+at the instant it fires and see exactly which earlier states it can read (blue),
+which it reads directly (solid blue), and which are already sitting there
+computed but architecturally out of reach (red), with a live count of how much
+reachable information is going unused right now.
 
-Live: https://claude.ai/artifact/56qd3QqQL93wk6tqLNJ97d
+Live: https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/01-training-vs-inference/
+(also on [Claude Artifacts](https://claude.ai/artifact/56qd3QqQL93wk6tqLNJ97d))
 
 ## Roadmap ideas
 
