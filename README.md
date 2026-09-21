@@ -21,7 +21,7 @@ No build step, no dependencies — open any `index.html` directly in a browser.
 
 ## Visualizations
 
-### 01 — What can reach what
+### 01 — [What can reach what](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/01-training-vs-inference/)
 
 The core distinction the paper's argument turns on, laid out as a single grid of
 hidden states `h[t, ℓ]` (token position × layer):
@@ -45,7 +45,7 @@ which it reads directly (solid blue), and which are already sitting there
 computed but architecturally out of reach (red), with a live count of how much
 reachable information is going unused right now.
 
-### 02 — Closing the loop
+### 02 — [Closing the loop](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/02-closing-the-loop/)
 
 Full-bandwidth *training*, unrolled. Teacher forcing runs every position at once, but
 position `t` wants `h[t-1]`, the previous position's **top-layer** latent — which does
