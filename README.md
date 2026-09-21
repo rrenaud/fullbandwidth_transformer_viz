@@ -21,7 +21,7 @@ No build step, no dependencies — open any `index.html` directly in a browser.
 
 ## Visualizations
 
-### 01 — [What can reach what](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/01-training-vs-inference/)
+### 01 — [Causal reach](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/01-training-vs-inference/)
 
 The core distinction the paper's argument turns on, laid out as a single grid of
 hidden states `h[t, ℓ]` (token position × layer):
