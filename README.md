@@ -108,7 +108,8 @@ alone, so the `z` label at the receiving end does that; the ramp carries the ord
 The page itself is deliberately sparse: it is built to be narrated, so the explanation
 lives here rather than on screen. What stays in the figure is what the picture cannot say
 by itself — the objective, the axis labels, and the two notes about what is *absent*
-(position 1 has no latent; pass 1 has nothing to gate with).
+(position 1 has no latent; pass 1 has nothing to gate with), plus each pass's share of
+training batches — 75 / 22 / 3, which sum to 100 and so read as the partition they are.
 
 Hover or tab any top-row cell to follow one latent around the loop into the position it
 lands in. The figure shows three passes — enough for the staircase to establish itself

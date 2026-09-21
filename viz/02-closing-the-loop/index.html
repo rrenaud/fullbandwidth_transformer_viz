@@ -171,6 +171,10 @@ footer a{color:inherit}
 
 <script>
 const T=10, L=5, PASSES=3, RHO=0.4;
+// The paper's schedule: "75% single-pass, 22% two-pass, 3% three-pass batches",
+// introduced midway through training. They partition the batches, so they sum to 100
+// and the figure is drawing the 3% case.
+const batchShare={1:'75%',2:'22%',3:'3%'};
 const targets=["cat","sat","on","the","warm","mat","by","the","door","."];
 const words=["The","cat","sat","on","the","warm","mat","by","the","door"];
 const NS="http://www.w3.org/2000/svg";
@@ -179,7 +183,7 @@ const NS="http://www.w3.org/2000/svg";
 // inputs at the bottom, layer L = latents at the top), matching viz 01. That puts
 // a pass's output row as far as possible from the next pass's input row, which is
 // the point: the return wire has to travel around the outside of the whole block.
-const CW=27, CH=18, COLW=34, ROWH=21, PADL=74, TOP0=76, GAP=58;
+const CW=27, CH=18, COLW=34, ROWH=21, PADL=96, TOP0=76, GAP=58;
 const TARGY=48;                      // baseline of the target-token row at the head
 const BLOCKH=L*ROWH+CH;
 const PITCH=BLOCKH+GAP;
@@ -350,7 +354,8 @@ function drawLoss(s){
 }
 
 function drawBlock(p,s,now,back){
-  txt(svg,`PASS ${p}`,{x:4,y:blockTop(p)+BLOCKH/2-3,'font-size':10.5,fill:'var(--muted)','letter-spacing':'.08em'});
+  txt(svg,`PASS ${p}`,{x:4,y:blockTop(p)+BLOCKH/2-4,'font-size':10.5,fill:'var(--muted)','letter-spacing':'.08em'});
+  txt(svg,`${batchShare[p]} of batches`,{x:4,y:blockTop(p)+BLOCKH/2+9,'font-size':8.5,fill:'var(--muted)'});
   for(let l=0;l<=L;l++){
     txt(svg,l===0?'in':(l===L?'L':String(l)),
       {x:PADL-12,y:Y(p,l)+CH/2+3.5,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-style':l===L?'italic':'normal'});
