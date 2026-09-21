@@ -38,7 +38,6 @@
     --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.26);
     --red:#FC6255;
     --grey-soft:rgba(255,255,255,.07); --bar:rgba(0,0,0,.88);
-  --grad:#6FD39A;
     --grad:#6FD39A;
     --w1:#00a2b9;
     --w2:#00a2ce;
@@ -57,6 +56,7 @@
   --yellow:#F7D96F; --yellow-soft:rgba(247,217,111,.26);
   --red:#FC6255;
   --grey-soft:rgba(255,255,255,.07); --bar:rgba(0,0,0,.88);
+  --grad:#6FD39A;
   --w1:#00a2b9;
   --w2:#00a2ce;
   --w3:#3ba0de;
@@ -98,7 +98,8 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .inset{width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
 .inset text{font-family:inherit}
 .formula{font-size:13.5px;margin:8px 0 0;text-align:center}
-.hops{font-size:13px;line-height:1.35;color:var(--muted);margin:16px 0 0;text-align:center;min-height:3.6em}
+.hops{font-size:13px;line-height:1.4;color:var(--muted);margin:0;padding-top:16px;
+  border-top:1px solid var(--line);text-align:center;min-height:4.2em}
 .hops b{color:var(--ink);font-weight:600}
 
 
@@ -163,9 +164,9 @@ footer a{color:inherit}
           <text x="249" y="127" text-anchor="middle" font-size="12" fill="var(--w4)" font-style="italic">h<tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
           <text x="249" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
         </svg>
-        <p class="hops" id="hops"></p>
         <p class="formula"><i>e<sub>t</sub></i> &otimes; <i>h</i><sub><i>t</i>&minus;1</sub> = <i>W</i><sup>U</sup><i>h</i><sub><i>t</i>&minus;1</sub> &odot; &sigma;(<i>W</i><sup>G</sup><i>e<sub>t</sub></i>)</p>
       </div>
+      <div><p class="hops" id="hops"></p></div>
     </aside>
   </div>
 </main>
