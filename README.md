@@ -89,8 +89,9 @@ Two things the diagram used to leave implicit are now drawn. The sequence enters
 foot and the targets leave at the head; every latent row carries a tick up into the loss,
 so a pass both hands its latents on *and* gets scored, and the head of the figure spells
 out the targets all three are scored against. And each wire lands on a ⊕ rather than an
-arrowhead, with a side inset opening up one input cell — and note which way round the
-paper puts it: `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`, so the latent is the *value*
+arrowhead, with a side inset opening up one input cell. The page draws that cell rather
+than stating it; the equation is `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`, so the
+latent is the *value*
 and the token embedding enters only as a multiplicative gate. It is a product, not a sum,
 which is why pass 1 runs as the plain single-pass objective rather than by feeding a zero
 latent through the gate — that would zero the input outright.

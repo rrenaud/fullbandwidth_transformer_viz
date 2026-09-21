@@ -97,10 +97,12 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .side h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;margin:0 0 6px}
 .inset{width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
 .inset text{font-family:inherit}
-.formula{font-size:13.5px;margin:8px 0 0;text-align:center}
-.hops{font-size:13px;line-height:1.4;color:var(--muted);margin:0;padding-top:16px;
-  border-top:1px solid var(--line);text-align:center;min-height:4.2em}
-.hops b{color:var(--ink);font-weight:600}
+.stattable{width:100%;border-collapse:collapse;font-size:14px}
+.stattable th,.stattable td{padding:8px 10px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
+.stattable th:first-child,.stattable td:first-child{text-align:left}
+.stattable thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
+.stattable tbody th{font-weight:600;text-align:left}
+.stattable td.blue{color:var(--blue)}
 
 
 footer{max-width:1320px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
@@ -164,14 +166,22 @@ footer a{color:inherit}
           <text x="249" y="127" text-anchor="middle" font-size="12" fill="var(--w4)" font-style="italic">h<tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
           <text x="249" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
         </svg>
-        <p class="formula"><i>e<sub>t</sub></i> &otimes; <i>h</i><sub><i>t</i>&minus;1</sub> = <i>W</i><sup>U</sup><i>h</i><sub><i>t</i>&minus;1</sub> &odot; &sigma;(<i>W</i><sup>G</sup><i>e<sub>t</sub></i>)</p>
       </div>
-      <div><p class="hops" id="hops"></p></div>
+      <div>
+        <h2>Latent chain</h2>
+        <table class="stattable">
+          <thead><tr><th>Regime</th><th>Hops</th><th>Back&nbsp;to</th></tr></thead>
+          <tbody>
+            <tr><th id="rTrain">training</th><td id="hTrain">&ndash;</td><td id="bTrain">&ndash;</td></tr>
+            <tr><th>inference</th><td id="hInf">&ndash;</td><td id="bInf">&ndash;</td></tr>
+          </tbody>
+        </table>
+      </div>
     </aside>
   </div>
 </main>
 
-<footer>Illustrative &mdash; 10 tokens, 5 layers, three passes. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Illustrative &mdash; 10 tokens, 5 layers, three passes. Hover any cell to trace its latent chain. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, PASSES=3;
@@ -242,7 +252,7 @@ function curve(p,t){
 const svg=document.getElementById('stage');
 const tickread=document.getElementById('tickread');
 const playBtn=document.getElementById('play');
-const hops=document.getElementById('hops');
+const [rTrain,hTrain,bTrain,hInf,bInf]=['rTrain','hTrain','bTrain','hInf','bInf'].map(i=>document.getElementById(i));
 
 // Everything drawn is rebuilt every frame, so the interactive targets cannot live
 // there: a mouse move would destroy the node it is over mid-gesture. They get their
@@ -297,7 +307,7 @@ function render(){
   drawLoss(s);
 
   if(!gHit) buildHits(); else svg.appendChild(gHit);   // keep the targets on top
-  hops.innerHTML=hopText();
+  drawHops();
   tickread.textContent=s>FSTEPS?`${s} / ${TOTAL} · back`:`${s} / ${TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
 }
@@ -445,14 +455,16 @@ function drawBlock(p,s,now,back,ch){
 
 // Position t needs t-1 latent hops to match sequential decoding; a k-pass run can
 // only supply k-1 of them, however long the sequence is. That shortfall is the whole
-// difference between the training and inference recurrence.
-function hopText(){
-  if(!hover) return '<span>hover a cell to trace the latent hops that fed it</span>';
+// difference between the training and inference recurrence, so put the two side by
+// side the way viz 01 puts its regimes side by side.
+function drawHops(){
+  const blank=[hTrain,bTrain,hInf,bInf];
+  if(!hover){ rTrain.textContent='training'; blank.forEach(e=>e.textContent='\u2013'); hTrain.className=''; return; }
   const {p,t}=hover, c=chain(p,t);
-  const hop=n=>`${n===1?'hop':'hops'}`;
-  if(c.want===0) return `position 1 needs no latent at all &mdash; in training or at inference`;
-  if(c.hops===c.want) return `position ${t} in pass ${p}: its full chain of <b>${c.want}</b> ${hop(c.want)} &mdash; what inference builds too`;
-  return `position ${t} in pass ${p}: <b>${c.hops}</b> ${hop(c.hops)} of latent chain, inference builds <b>${c.want}</b>`;
+  rTrain.textContent=`pass ${p}`;
+  hTrain.textContent=c.hops;  bTrain.textContent=c.tail.t;
+  hInf.textContent=c.want;    bInf.textContent=1;
+  hTrain.className=c.hops===c.want?'blue':'';
 }
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
