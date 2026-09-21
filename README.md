@@ -105,6 +105,11 @@ latent it leaves and labels the input it joins — so the whole ribbon is visibl
 ramp, slid one column to the right. (Nine smooth steps can't carry identity by colour
 alone, so the `z` label at the receiving end does that; the ramp carries the ordering.)
 
+The page itself is deliberately sparse: it is built to be narrated, so the explanation
+lives here rather than on screen. What stays in the figure is what the picture cannot say
+by itself — the objective, the axis labels, and the two notes about what is *absent*
+(position 1 has no latent; pass 1 has nothing to gate with).
+
 Hover or tab any top-row cell to follow one latent around the loop into the position it
 lands in. The figure shows three passes — enough for the staircase to establish itself
 without the page turning into a scroll.

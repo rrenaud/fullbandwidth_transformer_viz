@@ -69,10 +69,10 @@
 }
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"STIX Two Text","Times New Roman",Georgia,serif;font-size:16px;line-height:1.4}
-main{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 28px}
+main{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:0 28px}
 
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:14px 20px 12px;margin-bottom:20px}
-.topinner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px}
+.topinner{max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px}
 h1{font-weight:400;font-size:20px;margin:0;letter-spacing:-.01em;white-space:nowrap}
 h1 a{color:var(--muted);font-size:13px;font-weight:400;margin-left:10px;text-decoration:none;border-bottom:1px solid var(--line)}
 
@@ -90,7 +90,7 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .sw.wire{width:22px;height:4px;border:0;border-radius:2px;
   background:linear-gradient(90deg,var(--w1),var(--w3),var(--w5),var(--w7),var(--w9))}
 
-.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:26px;align-items:start}
+.layout{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(230px,.85fr);gap:30px;align-items:start}
 @media (max-width:900px){ .layout{grid-template-columns:1fr} }
 .stage svg{width:100%;height:auto;display:block}
 .side{display:flex;flex-direction:column;gap:18px}
@@ -98,20 +98,9 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .inset{width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
 .inset text{font-family:inherit}
 .formula{font-size:13.5px;margin:8px 0 0;text-align:center}
-.caption{font-size:13px;color:var(--muted);margin:7px 0 0}
-.notes{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;font-size:14.5px}
-.notes li{padding-left:13px;border-left:2px solid var(--line)}
-.notes b{font-weight:600}
 
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th,td{padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
-th:first-child,td:first-child{text-align:left}
-thead th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
-tbody th{font-weight:600;text-align:left}
-tbody tr.on{background:var(--yellow-soft)}
-td.exact{color:var(--blue)}
 
-footer{max-width:1180px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+footer{max-width:1320px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
 footer a{color:inherit}
 
 .flow{animation:flow .85s linear infinite}
@@ -132,12 +121,12 @@ footer a{color:inherit}
       <span class="tickread" id="tickread">0 / 18</span>
     </div>
     <div class="legend">
-      <span><i class="sw wire"></i>latent bus, by source position</span>
+      <span><i class="sw wire"></i>latent, by source position</span>
       <span><i class="sw" style="background:var(--yellow-soft);border-color:var(--yellow)"></i>firing now</span>
       <span><i class="sw" style="background:var(--blue-soft);border-color:var(--blue)"></i>exact</span>
       <span><i class="sw" style="background:var(--red);border-color:var(--red);opacity:.52"></i>stale latent</span>
       <span><i class="sw" style="border-style:dashed"></i>pending</span>
-      <span><b class="oplus">&otimes;</b>h gated by the token embedding</span>
+      <span><b class="oplus">&otimes;</b>gated fusion</span>
       <span><i class="sw" style="background:var(--grad);border-color:var(--grad)"></i>gradient</span>
     </div>
   </div>
@@ -147,14 +136,6 @@ footer a{color:inherit}
   <div class="layout">
     <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked bottom to top; each pass hands its top-layer latents up into the next pass's inputs, shifted one position"></svg></section>
     <aside class="side">
-      <div>
-        <h2>Exact prefix</h2>
-        <table>
-          <thead><tr><th>Pass</th><th>Exact&nbsp;through</th></tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-        <p class="caption">Follows from the update rule: position 1 is fed plain <i>e</i><sub>1</sub> in every pass, so it is right immediately, and each pass pins one more. The paper does not frame it this way &mdash; it presents the multi-pass scheme as an approximation, not as exact on a growing prefix.</p>
-      </div>
       <div>
         <h2>Inside one input cell</h2>
         <svg class="inset" viewBox="0 0 300 152" role="img"
@@ -181,23 +162,12 @@ footer a{color:inherit}
           <text x="249" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
         </svg>
         <p class="formula"><i>e<sub>t</sub></i> &otimes; <i>h</i><sub><i>t</i>&minus;1</sub> = <i>W</i><sup>U</sup><i>h</i><sub><i>t</i>&minus;1</sub> &odot; &sigma;(<i>W</i><sup>G</sup><i>e<sub>t</sub></i>)</p>
-        <p class="caption">Note which way round it is: the latent is the <i>value</i>, and the token embedding enters only as a multiplicative gate. It is a product, not a sum &mdash; which is also why pass 1 is run as the plain single-pass objective on <i>e</i><sub>1:<i>t</i></sub> rather than by feeding a zero latent through the gate, since that would zero the input outright.</p>
-      </div>
-      <div>
-        <h2>Why the loop needs unrolling</h2>
-        <ul class="notes">
-          <li><b>One pass can't see its own latents.</b> Teacher forcing runs every position at once, but position <i>t</i> wants <i>h</i><sub><i>t</i>&minus;1</sub> &mdash; a <i>top-layer</i> state that doesn't exist until the pass is over. So the pass uses the previous pass's latents, then runs again.</li>
-          <li><b>The loop closes one token per pass.</b> Position 1 needs no latent, so it is exact from pass 1. Its latent makes position 2 exact in pass 2, and so on. Past that wavefront the error only shrinks, pass by pass &mdash; which is why a handful of passes stands in for the <i>T</i> it would take to converge outright. The paper reports the learned feedback map behaving &ldquo;like a contraction toward a fixed point&rdquo;, stable well beyond the depths seen in training.</li>
-          <li><b>Inference pays none of it.</b> Decoding is sequential anyway: <i>h</i><sub><i>t</i>&minus;1</sub> is already sitting there when step <i>t</i> starts, which is what buys the paper's &ldquo;negligible per-token decoding overhead&rdquo;. The iteration is a training-time cost: a <i>k</i>-pass batch runs at roughly <i>k</i>&times; the compute of ordinary teacher forcing. But the passes are scheduled rather than always on &mdash; the paper's runs are 75% single-pass, 22% two-pass, 3% three-pass, introduced midway through training &mdash; so the average overhead is nearer 1.3&times;. The three-pass batch drawn here is the rare one.</li>
-          <li><b>Every pass is scored.</b> &ldquo;We then apply the standard teacher-forced next-token-prediction loss to the outputs of every pass.&rdquo; The first term is the ordinary single-pass objective on plain embeddings; the feedback passes are averaged and weighted by &lambda; (1 by default), giving <i>L</i><sub>1</sub> + &lambda;(<i>L</i><sub>2</sub> + <i>L</i><sub>3</sub>)/2 at three passes. So the model is trained across the whole range of latent quality it will be handed: no feedback at all in pass 1, stale latents in pass 2, nearly converged ones in pass 3.</li>
-          <li><b>Nothing is detached.</b> &ldquo;We do not detach the gradient, so the loss from later passes backpropagates into earlier passes' latent states, acting as an auxiliary objective.&rdquo; The backward pass therefore runs the whole height of the figure &mdash; down every layer of pass 3, back across the handoff into pass 2's latents, down again, and out the bottom. It is one graph, not three. The paper notes this &ldquo;does increase the memory footprint.&rdquo;</li>
-        </ul>
       </div>
     </aside>
   </div>
 </main>
 
-<footer>Each block is one full teacher-forced pass over the same sequence, and the passes climb: <b>pass 1 is at the foot of the figure</b>. The wire leaving a pass's top-layer row &mdash; carrying that row's latents, <i>h</i><sub>1</sub>&hellip;<i>h</i><sub>9</sub> &mdash; enters the next pass's inputs directly above it, one position to the right. Wire colour is keyed to the latent's <i>source</i> position, so the ribbon visibly lands one column right: the cap on <i>h</i><sub>4</sub> and the <i>h</i><sub>4</sub> label under position 5 are the same colour. Hover or tab a top-row cell to follow a single latent. Illustrative (10 tokens, 5 layers). Which positions are exact follows from the architecture; how fast the stale tint fades past them does not &mdash; nothing here is measured. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
+<footer>Illustrative &mdash; 10 tokens, 5 layers, three passes. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
 const T=10, L=5, PASSES=3, RHO=0.4;
@@ -246,7 +216,6 @@ const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
 const err={};
 err[1]=Array.from({length:T+1},(_,t)=>t<=1?0:1);
 for(let p=2;p<=PASSES;p++) err[p]=Array.from({length:T+1},(_,t)=>t<=1?0:RHO*err[p-1][t-1]);
-const exactThrough=p=>{let n=0;for(let t=1;t<=T;t++){if(err[p][t]>0)break;n=t;}return n;};
 
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
 function txt(parent,s,attrs){const e=el('text',attrs,parent);e.textContent=s;return e}
@@ -260,7 +229,6 @@ function curve(p,t){
 }
 
 const svg=document.getElementById('stage');
-const tbody=document.getElementById('tbody');
 const tickread=document.getElementById('tickread');
 const playBtn=document.getElementById('play');
 
@@ -292,7 +260,6 @@ function render(){
 
   tickread.textContent=s>FSTEPS?`${s} / ${TOTAL} · back`:`${s} / ${TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
-  drawTable(now||back);
 }
 
 // The return wire: out of the top of the latent row, up over the block, down the
@@ -352,7 +319,7 @@ function drawZeroTaps(s){
     const x=X(t)+CW/2;
     el('line',{x1:x,y1:Y(1,0)+CH+3,x2:x,y2:y1,stroke:'var(--line)','stroke-width':1,'stroke-dasharray':'2 3'},svg);
   }
-  txt(svg,'pass 1 runs on the plain embeddings e\u209C \u2014 nothing to gate with yet',
+  txt(svg,'pass 1: plain embeddings, nothing to gate with',
     {x:(X(1)+GRIDR)/2,y:y1+11,'text-anchor':'middle','font-size':10,fill:'var(--muted)','font-style':'italic'});
 }
 
@@ -378,10 +345,8 @@ function drawLoss(s){
   for(let t=1;t<=T;t++) txt(svg,targets[t-1],{x:X(t)+CW/2,y:TARGY,'text-anchor':'middle','font-size':10.5,fill:'var(--ink)'});
   txt(svg,'targets',{x:PADL-12,y:TARGY,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
   el('path',{d:`M${X(1)},${TARGY-16} v-4 H${GRIDR} v4`,fill:'none',stroke:'var(--line)','stroke-width':1},svg);
-  txt(svg,'\u03A3 cross-entropy against the next token \u2014 every pass is scored, against these same targets',
-    {x:(X(1)+GRIDR)/2,y:TARGY-25,'text-anchor':'middle','font-size':10,fill:'var(--muted)','font-style':'italic'},svg);
   txt(svg,'training loss = L\u2081 + \u03BB(L\u2082 + L\u2083)/2',
-    {x:(X(1)+GRIDR)/2,y:TARGY-37,'text-anchor':'middle','font-size':11,fill:'var(--ink)','font-style':'italic'},svg);
+    {x:(X(1)+GRIDR)/2,y:TARGY-26,'text-anchor':'middle','font-size':11.5,fill:'var(--ink)','font-style':'italic'},svg);
 }
 
 function drawBlock(p,s,now,back){
@@ -440,15 +405,6 @@ function drawBlock(p,s,now,back){
   }
 }
 
-function drawTable(now){
-  tbody.innerHTML='';
-  for(let p=1;p<=PASSES;p++){
-    const tr=document.createElement('tr');
-    if(now&&now.p===p) tr.className='on';
-    tr.innerHTML=`<th>${p}</th><td class="exact">t ≤ ${exactThrough(p)}</td>`;
-    tbody.appendChild(tr);
-  }
-}
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
 // The backward half retraces rows the forward half already explained, so it moves
