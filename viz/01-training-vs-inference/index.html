@@ -188,8 +188,8 @@ function buildPanel(cfg){
     const computed=(t,l)=>tAt(mode,t,l)<=time;
 
     for(let l=0;l<=L;l++){
-      const tl=el('text',{x:G.padL-12,y:Y(l)+G.ch/2+4,'text-anchor':'end','font-size':10.5,fill:'var(--muted)','font-style':l===L?'italic':'normal'},svg);
-      tl.textContent=l===0?'in':(l===L?'L':String(l));
+      const tl=el('text',{x:G.padL-12,y:Y(l)+G.ch/2+4,'text-anchor':'end','font-size':10.5,fill:'var(--muted)'},svg);
+      tl.textContent=l===0?'in':String(l);
     }
 
     if(mode!=='train'){
