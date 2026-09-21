@@ -59,11 +59,19 @@ Three things fall out of that, and the page animates all three:
 - **The loop closes one token per pass.** Position 1 needs no latent, so it is exact
   from pass 1; its latent makes position 2 exact in pass 2, and so on. The exact prefix
   advances one token per pass — a visible staircase up the stack.
-- **Past that wavefront the error only contracts**, which is why a handful of passes
-  stands in for the `T` it would take to converge exactly. The page shows this as a
-  stale tint that fades pass by pass, and shows no number for it: which positions are
-  exact follows from the architecture, but any rate of contraction would be invented,
-  and an invented rate printed to three decimals reads as a measurement.
+- **Which is a statement about recursion depth.** Attention reaches the whole prefix in
+  either regime, so the training/inference gap is not positional reach — it is how many
+  *latent hops* deep the recursion goes. At inference, position `t` sits at the end of a
+  chain `h₁ → h₂ → … → h_{t-1}`: `t-1` hops. In training each hop costs a pass, so `k`
+  passes buy exactly `k-1` hops however long the sequence is. Position `t` matches
+  inference iff `t-1 ≤ k-1` — the staircase again, from the other side. Hover any cell
+  to light the chain that actually fed it and watch it bottom out on pass 1 rather than
+  reach position 1. The counts are left for the speaker to say: at position 10 of a
+  three-pass run it is 2 hops against the 9 inference builds.
+
+  This is also why the paper needs its contraction result. It trains at 2 hops and
+  reports the iterates staying stable through 30, "like a contraction toward a fixed
+  point" — the gap being survivable rather than absent.
 - **Inference pays none of it.** Decoding is already sequential, so `h[t-1]` is sitting
   there when step `t` starts. A `k`-pass batch costs roughly `k`× ordinary teacher
   forcing, but the passes are *scheduled* — the paper's runs are 75% single-pass, 22%
@@ -82,8 +90,8 @@ Two things the diagram used to leave implicit are now drawn. The sequence enters
 foot and the targets leave at the head; every latent row carries a tick up into the loss,
 so a pass both hands its latents on *and* gets scored, and the head of the figure spells
 out the targets all three are scored against. And each wire lands on a ⊕ rather than an
-arrowhead, with a side inset opening up one input cell — and note which way round the
-paper puts it: `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`, so the latent is the *value*
+arrowhead — the paper's `⊗`, since `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`: the
+latent is the *value*
 and the token embedding enters only as a multiplicative gate. It is a product, not a sum,
 which is why pass 1 runs as the plain single-pass objective rather than by feeding a zero
 latent through the gate — that would zero the input outright.
@@ -105,8 +113,8 @@ latent it leaves and labels the input it joins — so the whole ribbon is visibl
 ramp, slid one column to the right. (Nine smooth steps can't carry identity by colour
 alone, so the `z` label at the receiving end does that; the ramp carries the ordering.)
 
-The page itself is deliberately sparse: it is built to be narrated, so the explanation
-lives here rather than on screen. What stays in the figure is what the picture cannot say
+The page is the figure and nothing else — no side panel, no tables, no prose. It is
+built to be narrated, so the explanation lives here rather than on screen. What stays in the figure is what the picture cannot say
 by itself — the objective, the axis labels, and the two notes about what is *absent*
 (position 1 has no latent; pass 1 has nothing to gate with), plus each pass's share of
 training batches — 75 / 22 / 3, which sum to 100 and so read as the partition they are.
