@@ -59,11 +59,18 @@ Three things fall out of that, and the page animates all three:
 - **The loop closes one token per pass.** Position 1 needs no latent, so it is exact
   from pass 1; its latent makes position 2 exact in pass 2, and so on. The exact prefix
   advances one token per pass — a visible staircase up the stack.
-- **Past that wavefront the error only contracts**, which is why a handful of passes
-  stands in for the `T` it would take to converge exactly. The page shows this as a
-  stale tint that fades pass by pass, and shows no number for it: which positions are
-  exact follows from the architecture, but any rate of contraction would be invented,
-  and an invented rate printed to three decimals reads as a measurement.
+- **Which is a statement about recursion depth.** Attention reaches the whole prefix in
+  either regime, so the training/inference gap is not positional reach — it is how many
+  *latent hops* deep the recursion goes. At inference, position `t` sits at the end of a
+  chain `h₁ → h₂ → … → h_{t-1}`: `t-1` hops. In training each hop costs a pass, so `k`
+  passes buy exactly `k-1` hops however long the sequence is. Position `t` matches
+  inference iff `t-1 ≤ k-1` — the staircase again, from the other side. Hover any cell
+  to light the chain that actually fed it and watch it bottom out on pass 1: at position
+  10 of a three-pass run it is 2 hops against the 9 inference builds.
+
+  This is also why the paper needs its contraction result. It trains at 2 hops and
+  reports the iterates staying stable through 30, "like a contraction toward a fixed
+  point" — the gap being survivable rather than absent.
 - **Inference pays none of it.** Decoding is already sequential, so `h[t-1]` is sitting
   there when step `t` starts. A `k`-pass batch costs roughly `k`× ordinary teacher
   forcing, but the passes are *scheduled* — the paper's runs are 75% single-pass, 22%

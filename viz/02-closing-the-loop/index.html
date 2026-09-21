@@ -98,6 +98,8 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .inset{width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
 .inset text{font-family:inherit}
 .formula{font-size:13.5px;margin:8px 0 0;text-align:center}
+.hops{font-size:13px;line-height:1.35;color:var(--muted);margin:16px 0 0;text-align:center;min-height:3.6em}
+.hops b{color:var(--ink);font-weight:600}
 
 
 footer{max-width:1320px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
@@ -123,8 +125,8 @@ footer a{color:inherit}
     <div class="legend">
       <span><i class="sw wire"></i>latent, by source position</span>
       <span><i class="sw" style="background:var(--yellow-soft);border-color:var(--yellow)"></i>firing now</span>
-      <span><i class="sw" style="background:var(--blue-soft);border-color:var(--blue)"></i>exact</span>
-      <span><i class="sw" style="background:var(--red);border-color:var(--red);opacity:.52"></i>stale latent</span>
+      <span><i class="sw" style="background:var(--blue-soft);border-color:var(--blue)"></i>matches inference</span>
+      <span><i class="sw" style="background:var(--grey-soft)"></i>computed</span>
       <span><i class="sw" style="border-style:dashed"></i>pending</span>
       <span><b class="oplus">&otimes;</b>gated fusion</span>
       <span><i class="sw" style="background:var(--grad);border-color:var(--grad)"></i>gradient</span>
@@ -161,6 +163,7 @@ footer a{color:inherit}
           <text x="249" y="127" text-anchor="middle" font-size="12" fill="var(--w4)" font-style="italic">h<tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
           <text x="249" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
         </svg>
+        <p class="hops" id="hops"></p>
         <p class="formula"><i>e<sub>t</sub></i> &otimes; <i>h</i><sub><i>t</i>&minus;1</sub> = <i>W</i><sup>U</sup><i>h</i><sub><i>t</i>&minus;1</sub> &odot; &sigma;(<i>W</i><sup>G</sup><i>e<sub>t</sub></i>)</p>
       </div>
     </aside>
@@ -170,7 +173,7 @@ footer a{color:inherit}
 <footer>Illustrative &mdash; 10 tokens, 5 layers, three passes. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
 
 <script>
-const T=10, L=5, PASSES=3, RHO=0.4;
+const T=10, L=5, PASSES=3;
 // The paper's schedule: "75% single-pass, 22% two-pass, 3% three-pass batches",
 // introduced midway through training. They partition the batches, so they sum to 100
 // and the figure is drawing the 3% case.
@@ -210,16 +213,19 @@ const backRow=s=>{const i=s-FSTEPS-1; return i<0?null:{p:PASSES-Math.floor(i/SUB
 const VB_H=Y(1,0)+CH+54;
 const cellDone=(p,l,s)=>(p-1)*SUB+l<s;
 
-// err[p][t]: how far position t's states in pass p still sit from the fixed point.
-// Pass 1 has no feedback at all, so every position past the first starts wrong; after
-// that each pass inherits the previous pass's error from one position back, damped by
-// a contraction factor. The [p-1][t-1] index is the architecture talking, and it is
-// what makes the exact prefix grow one token per pass. RHO is not: it is a made-up
-// rate, so this drives nothing but how quickly the stale tint fades, and no number
-// off it is ever shown - a reader would take three decimals for a measurement.
-const err={};
-err[1]=Array.from({length:T+1},(_,t)=>t<=1?0:1);
-for(let p=2;p<=PASSES;p++) err[p]=Array.from({length:T+1},(_,t)=>t<=1?0:RHO*err[p-1][t-1]);
+// A state matches what sequential decoding would compute exactly when the chain of
+// latent hops it needs fits in the passes available: position t needs t-1 hops, a
+// k-pass run supplies k-1. Hence t <= p, and hence the staircase.
+const exact=(p,t)=>t<=p;
+// Where a state's latents actually came from: (p,t) was fed h from (p-1,t-1), which
+// was fed from (p-2,t-2). The walk ends at pass 1 (no latent at all) or position 1
+// (never has one) - and ending on pass 1 above position 1 is the truncation.
+function chain(p,t){
+  const c=[]; let cp=p, ct=t;
+  while(cp>1&&ct>1){ c.push(`${cp}:${ct}`); cp--; ct--; }
+  c.push(`${cp}:${ct}`);
+  return {set:new Set(c), hops:Math.min(p-1,t-1), want:t-1, tail:{p:cp,t:ct}};
+}
 
 function el(name,attrs,parent){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
 function txt(parent,s,attrs){const e=el('text',attrs,parent);e.textContent=s;return e}
@@ -235,13 +241,40 @@ function curve(p,t){
 const svg=document.getElementById('stage');
 const tickread=document.getElementById('tickread');
 const playBtn=document.getElementById('play');
+const hops=document.getElementById('hops');
+
+// Everything drawn is rebuilt every frame, so the interactive targets cannot live
+// there: a mouse move would destroy the node it is over mid-gesture. They get their
+// own layer instead, built once and only ever re-raised above the redrawn art.
+let gHit=null;
+function bind(node,h){
+  const set=()=>{
+    if(playing) return;
+    if(hover&&hover.kind===h.kind&&hover.p===h.p&&hover.t===h.t&&hover.l===h.l) return;
+    hover=h; render();
+  };
+  const clear=()=>{ if(!playing&&hover){ hover=null; render(); } };
+  node.addEventListener('mouseenter',set); node.addEventListener('mouseleave',clear);
+  node.addEventListener('focus',set);      node.addEventListener('blur',clear);
+}
+function buildHits(){
+  gHit=el('g',{},svg);
+  for(let p=1;p<PASSES;p++)for(let t=1;t<T;t++)
+    bind(el('path',{d:curve(p,t),fill:'none',stroke:'transparent','stroke-width':9,
+      style:'cursor:pointer','pointer-events':'stroke'},gHit),{kind:'latent',p,t});
+  for(let p=1;p<=PASSES;p++)for(let t=1;t<=T;t++)for(let l=0;l<=L;l++)
+    bind(el('rect',{x:X(t),y:Y(p,l),width:CW,height:CH,rx:3,fill:'transparent',
+      'pointer-events':'all',style:'cursor:pointer',tabindex:l===L?0:-1},gHit),
+      {kind:l===L?'latent':'cell',p,t,l});
+}
 
 function render(){
   const s=step;
   svg.setAttribute('viewBox',`0 0 ${VB_W} ${VB_H}`);
-  svg.innerHTML='';
+  for(let n=svg.firstChild;n;){ const nx=n.nextSibling; if(n!==gHit) svg.removeChild(n); n=nx; }
   const now=(s>0&&s<=FSTEPS)?{p:Math.floor((s-1)/SUB)+1,l:(s-1)%SUB}:null;
   const back=backRow(s);
+  const ch=hover?chain(hover.p,hover.t):null;
 
   // Hovering a latent draws the two columns it ties together, one position apart.
   if(hover&&hover.kind==='latent'&&hover.p<PASSES){
@@ -257,11 +290,13 @@ function render(){
   for(let t=1;t<=T;t++) txt(svg,words[t-1],{x:X(t)+CW/2,y:wordY,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});
   txt(svg,'tokens in',{x:PADL-12,y:wordY,'text-anchor':'end','font-size':9.5,fill:'var(--muted)','font-style':'italic'});
 
-  for(let p=1;p<PASSES;p++) drawBus(p,s);
+  for(let p=1;p<PASSES;p++) drawBus(p,s,ch);
   drawZeroTaps(s);
-  for(let p=1;p<=PASSES;p++) drawBlock(p,s,now,back);
+  for(let p=1;p<=PASSES;p++) drawBlock(p,s,now,back,ch);
   drawLoss(s);
 
+  if(!gHit) buildHits(); else svg.appendChild(gHit);   // keep the targets on top
+  hops.innerHTML=hopText();
   tickread.textContent=s>FSTEPS?`${s} / ${TOTAL} · back`:`${s} / ${TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
 }
@@ -269,12 +304,14 @@ function render(){
 // The return wire: out of the top of the latent row, up over the block, down the
 // right channel past the whole next pass, then back leftward underneath it and up
 // into the input cells - one position to the right of where each latent came from.
-function drawBus(p,s){
+function drawBus(p,s,ch){
   if(!cellDone(p,L,s)) return;
   const delivered=s>p*SUB, live=s===p*SUB+1;
   for(let t=1;t<T;t++){
     const d=curve(p,t);
-    const lit=hover&&hover.kind==='latent'&&hover.p===p&&hover.t===t;
+    // A hop is on the hovered state's chain when both of its ends are.
+    const onChain=ch&&ch.set.has(`${p}:${t}`)&&ch.set.has(`${p+1}:${t+1}`);
+    const lit=onChain||(hover&&hover.kind==='latent'&&hover.p===p&&hover.t===t);
     const c=wire(t);
     if(lit) el('path',{d,fill:'none',stroke:c,'stroke-width':11,'stroke-opacity':.22,'stroke-linecap':'round'},svg);
     const strand=el('path',{d,fill:'none',stroke:c,'stroke-width':lit?2.6:1.3,
@@ -296,9 +333,6 @@ function drawBus(p,s){
       const gx=X(t)+CW-7, gy=Y(p,L);
       el('path',{d:`M${gx-3.4},${gy-7} L${gx+3.4},${gy-7} L${gx},${gy-.5} Z`,fill:'var(--grad)'},svg);
     }
-    const hit=el('path',{d,fill:'none',stroke:'transparent','stroke-width':9,style:'cursor:pointer','pointer-events':'stroke'},svg);
-    hit.addEventListener('mouseenter',()=>{if(!playing){hover={kind:'latent',p,t};render();}});
-    hit.addEventListener('mouseleave',()=>{if(!playing){hover=null;render();}});
   }
   if(p===1){
     txt(svg,'one position right →',{x:X(1)+CW/2-8,y:(Y(p,L)+Y(p+1,0)+CH)/2+3,'text-anchor':'end','font-size':9,fill:'var(--muted)','font-style':'italic'});
@@ -353,7 +387,7 @@ function drawLoss(s){
     {x:(X(1)+GRIDR)/2,y:TARGY-26,'text-anchor':'middle','font-size':11.5,fill:'var(--ink)','font-style':'italic'},svg);
 }
 
-function drawBlock(p,s,now,back){
+function drawBlock(p,s,now,back,ch){
   txt(svg,`PASS ${p}`,{x:4,y:blockTop(p)+BLOCKH/2-4,'font-size':10.5,fill:'var(--muted)','letter-spacing':'.08em'});
   txt(svg,`${batchShare[p]} of batches`,{x:4,y:blockTop(p)+BLOCKH/2+10,'font-size':9.5,fill:'var(--ink)'});
   for(let l=0;l<=L;l++){
@@ -382,18 +416,19 @@ function drawBlock(p,s,now,back){
   txt(svg,'∅',{x:X(1)+CW/2,y:Y(p,0)+CH+11,'text-anchor':'middle','font-size':9.5,fill:'var(--muted)'});
 
   for(let t=1;t<=T;t++)for(let l=0;l<=L;l++){
-    const done=cellDone(p,l,s), e=err[p][t];
-    let fill='none',stroke='var(--line)',sw=1,dash='3 2',fo=1;
+    const done=cellDone(p,l,s);
+    let fill='none',stroke='var(--line)',sw=1,dash='3 2';
     if(done){
       dash='';
-      if(e===0){ fill='var(--blue-soft)'; stroke='var(--blue)'; sw=.75; }
-      else{ fill='var(--red)'; fo=.10+.42*e; stroke='var(--red)'; sw=.75; }
+      if(exact(p,t)){ fill='var(--blue-soft)'; stroke='var(--blue)'; sw=.75; }
+      else{ fill='var(--grey-soft)'; stroke='var(--line)'; }
     }
-    const lit=hover&&hover.p===p&&hover.t===t&&(hover.kind==='latent'?l===L:hover.l===l);
+    const onChain=ch&&l===L&&ch.set.has(`${p}:${t}`);
+    const lit=onChain||(hover&&hover.p===p&&hover.t===t&&(hover.kind==='latent'?l===L:hover.l===l));
     const dest=hover&&hover.kind==='latent'&&hover.p+1===p&&hover.t+1===t&&l===0;
     if(lit||dest){ stroke='var(--yellow)'; sw=2; }
-    const g=el('g',{tabindex:l===L?0:-1,style:'cursor:pointer'},svg);
-    el('rect',{x:X(t),y:Y(p,l),width:CW,height:CH,rx:3,fill,'fill-opacity':fo,stroke,'stroke-width':sw,'stroke-dasharray':dash,'pointer-events':'all'},g);
+    const g=el('g',{},svg);
+    el('rect',{x:X(t),y:Y(p,l),width:CW,height:CH,rx:3,fill,stroke,'stroke-width':sw,'stroke-dasharray':dash},g);
     // The same colour marks both ends of one hop: a cap on the latent it leaves,
     // the arrowhead and z-label on the input it joins, one column to the right.
     if(done&&l===L&&t<T&&p<PASSES){
@@ -403,13 +438,21 @@ function drawBlock(p,s,now,back){
       txt(g,`h${t-1}`,{x:X(t)+CW/2,y:Y(p,0)+CH/2+2.8,'text-anchor':'middle','font-size':7.5,
         fill:wire(t-1),'font-weight':600,'pointer-events':'none'});
     }
-    const set=()=>{if(!playing){hover={kind:l===L?'latent':'cell',p,t,l};render();}};
-    const clear=()=>{if(!playing){hover=null;render();}};
-    g.addEventListener('mouseenter',set); g.addEventListener('mouseleave',clear);
-    g.addEventListener('focus',set); g.addEventListener('blur',clear);
   }
 }
 
+
+// Position t needs t-1 latent hops to match sequential decoding; a k-pass run can
+// only supply k-1 of them, however long the sequence is. That shortfall is the whole
+// difference between the training and inference recurrence.
+function hopText(){
+  if(!hover) return '<span>hover a cell to trace the latent hops that fed it</span>';
+  const {p,t}=hover, c=chain(p,t);
+  const hop=n=>`${n===1?'hop':'hops'}`;
+  if(c.want===0) return `position 1 needs no latent at all &mdash; in training or at inference`;
+  if(c.hops===c.want) return `position ${t} in pass ${p}: its full chain of <b>${c.want}</b> ${hop(c.want)} &mdash; what inference builds too`;
+  return `position ${t} in pass ${p}: <b>${c.hops}</b> ${hop(c.hops)} of latent chain, inference builds <b>${c.want}</b>`;
+}
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
 // The backward half retraces rows the forward half already explained, so it moves
