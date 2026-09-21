@@ -43,8 +43,8 @@
   <ul>
     <li>
       <a href="viz/01-training-vs-inference/">
-        <div class="name">Causal reach</div>
-        <div class="desc">Training fills the token&times;layer grid one row at a time; inference fills it one column at a time. Hover any cell to see what it can and can't read.</div>
+        <div class="name">Bypassing the 17-bit bottleneck</div>
+        <div class="desc">Every decoding step computes a full hidden state, then squeezes it down to a single token id before the next step can use it. Training fills the token&times;layer grid one row at a time; inference fills it one column at a time. Hover any cell to see what it can and can't read &mdash; and how much of that 17-bit ceiling is going unused.</div>
       </a>
     </li>
     <li>
