@@ -47,7 +47,7 @@ which it reads directly (solid blue), and which are already sitting there
 computed but architecturally out of reach (red), with a live count of how much
 reachable information is going unused right now.
 
-### 02 — [Closing the loop](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/02-closing-the-loop/)
+### 02 — [Multi-pass training](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/02-closing-the-loop/)
 
 Latent feedback ties `h[t]` to `h[t-1]`, so training it *exactly* would mean solving
 that recurrence sequentially — one token, one full pass through the stack, at a time,
