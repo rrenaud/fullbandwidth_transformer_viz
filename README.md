@@ -23,21 +23,23 @@ No build step, no dependencies — open any `index.html` directly in a browser.
 
 ### 01 — [Causal reach](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/01-training-vs-inference/)
 
-The core distinction the paper's argument turns on, laid out as a single grid of
-hidden states `h[t, ℓ]` (token position × layer):
+The paper's complaint, made literal: at every decoding step the stack computes a
+rich, continuous hidden state, and the only thing allowed to cross into the next
+step is a single discrete token id — at most `log₂|V|` bits. Laid out as a grid
+of hidden states `h[t, ℓ]` (token position × layer):
 
 - **Training** sweeps one *layer* at a time across every token in the sequence at
   once (teacher forcing). This is legal only because of the paper's *depth-frozen*
   constraint: no cell may read a deeper layer's output from an earlier position
   that hasn't been computed yet.
-- **Naive autoregressive inference** sweeps one *token* at a time through every
-  layer, imitating that same constraint — even though inference is already
-  sequential over tokens, so the constraint "buys nothing" there. Each finished
-  token's top-layer hidden state is discarded; only the sampled token id
-  (≤ log₂|V| bits) crosses to the next step.
-- **Full-bandwidth (latent feedback)** — the paper's fix — fuses that discarded
-  top-layer state back in via a gated linear unit, widening the channel between
-  decoding steps at no extra sequential cost.
+- **Baseline inference** sweeps one *token* at a time through every layer,
+  imitating that same depth-frozen constraint even though inference is already
+  sequential over tokens, so the constraint buys it nothing. This is also where
+  the bottleneck actually bites: each finished token's top-layer hidden state is
+  thrown away, and only the sampled token id crosses to the next step.
+- **Latent feedback** — the paper's fix — reopens that channel: it fuses the
+  discarded top-layer state back in via a gated linear unit, so the next step
+  gets the full hidden state instead of the token id it collapses to.
 
 Hover or tab to any cell — in any of the three panels at once — to freeze time
 at the instant it fires and see exactly which earlier states it can read (blue),
@@ -47,14 +49,19 @@ reachable information is going unused right now.
 
 ### 02 — [Closing the loop](https://rrenaud.github.io/fullbandwidth_transformer_viz/viz/02-closing-the-loop/)
 
-Full-bandwidth *training*, unrolled. Teacher forcing runs every position at once, but
-position `t` wants `h[t-1]`, the previous position's **top-layer** latent — which does
-not exist until the pass is over. So each pass is run against the *previous* pass's
-latents, and the pass is run again. The passes climb the figure — **pass 1 is at the
-foot** — so a pass's latent row sits directly beneath the next pass's input row, and the
-handoff is one short step up and one column to the right, with nothing to route around.
+Latent feedback ties `h[t]` to `h[t-1]`, so training it *exactly* would mean solving
+that recurrence sequentially — one token, one full pass through the stack, at a time,
+which is the same cost as inference and exactly what teacher forcing exists to avoid.
+Multi-pass training escapes that trade by turning it into a Jacobi (fixed-point)
+iteration: every pass still runs every position at once — teacher forcing stays fully
+parallel — but position `t` reads `h[t-1]` from the *previous* pass rather than waiting
+for the current one to reach it, so the whole sequence advances together and a handful
+of parallel sweeps stands in for what would otherwise be `T` sequential ones. The passes
+climb the figure — **pass 1 is at the foot** — so a pass's latent row sits directly
+beneath the next pass's input row, and the handoff is one short step up and one column
+to the right, with nothing to route around.
 
-Three things fall out of that, and the page animates all three:
+Several things fall out of that, and the page animates each:
 
 - **The loop closes one token per pass.** Position 1 needs no latent, so it is exact
   from pass 1; its latent makes position 2 exact in pass 2, and so on. The exact prefix
