@@ -65,8 +65,9 @@ Three things fall out of that, and the page animates all three:
   chain `h₁ → h₂ → … → h_{t-1}`: `t-1` hops. In training each hop costs a pass, so `k`
   passes buy exactly `k-1` hops however long the sequence is. Position `t` matches
   inference iff `t-1 ≤ k-1` — the staircase again, from the other side. Hover any cell
-  to light the chain that actually fed it and watch it bottom out on pass 1: at position
-  10 of a three-pass run it is 2 hops against the 9 inference builds.
+  to light the chain that actually fed it and watch it bottom out on pass 1 rather than
+  reach position 1. The counts are left for the speaker to say: at position 10 of a
+  three-pass run it is 2 hops against the 9 inference builds.
 
   This is also why the paper needs its contraction result. It trains at 2 hops and
   reports the iterates staying stable through 30, "like a contraction toward a fixed
@@ -89,8 +90,7 @@ Two things the diagram used to leave implicit are now drawn. The sequence enters
 foot and the targets leave at the head; every latent row carries a tick up into the loss,
 so a pass both hands its latents on *and* gets scored, and the head of the figure spells
 out the targets all three are scored against. And each wire lands on a ⊕ rather than an
-arrowhead, with a side inset opening up one input cell. The page draws that cell rather
-than stating it; the equation is `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`, so the
+arrowhead — the paper's `⊗`, since `e_t ⊗ h_{t-1} = W^U h_{t-1} ⊙ σ(W^G e_t)`: the
 latent is the *value*
 and the token embedding enters only as a multiplicative gate. It is a product, not a sum,
 which is why pass 1 runs as the plain single-pass objective rather than by feeding a zero
@@ -113,8 +113,8 @@ latent it leaves and labels the input it joins — so the whole ribbon is visibl
 ramp, slid one column to the right. (Nine smooth steps can't carry identity by colour
 alone, so the `z` label at the receiving end does that; the ramp carries the ordering.)
 
-The page itself is deliberately sparse: it is built to be narrated, so the explanation
-lives here rather than on screen. What stays in the figure is what the picture cannot say
+The page is the figure and nothing else — no side panel, no tables, no prose. It is
+built to be narrated, so the explanation lives here rather than on screen. What stays in the figure is what the picture cannot say
 by itself — the objective, the axis labels, and the two notes about what is *absent*
 (position 1 has no latent; pass 1 has nothing to gate with), plus each pass's share of
 training batches — 75 / 22 / 3, which sum to 100 and so read as the partition they are.

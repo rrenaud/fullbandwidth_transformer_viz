@@ -90,19 +90,10 @@ button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .sw.wire{width:22px;height:4px;border:0;border-radius:2px;
   background:linear-gradient(90deg,var(--w1),var(--w3),var(--w5),var(--w7),var(--w9))}
 
-.layout{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(230px,.85fr);gap:30px;align-items:start}
-@media (max-width:900px){ .layout{grid-template-columns:1fr} }
+/* The figure is the page now. Capped rather than full-bleed: the aspect is tall, so
+   every extra pixel of width costs two of height. */
+.stage{max-width:900px;margin:0 auto}
 .stage svg{width:100%;height:auto;display:block}
-.side{display:flex;flex-direction:column;gap:18px}
-.side h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;margin:0 0 6px}
-.inset{width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
-.inset text{font-family:inherit}
-.stattable{width:100%;border-collapse:collapse;font-size:14px}
-.stattable th,.stattable td{padding:8px 10px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line)}
-.stattable th:first-child,.stattable td:first-child{text-align:left}
-.stattable thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
-.stattable tbody th{font-weight:600;text-align:left}
-.stattable td.blue{color:var(--blue)}
 
 
 footer{max-width:1320px;margin:26px auto 0;padding:14px 20px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
@@ -138,47 +129,7 @@ footer a{color:inherit}
 </div>
 
 <main>
-  <div class="layout">
-    <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked bottom to top; each pass hands its top-layer latents up into the next pass's inputs, shifted one position"></svg></section>
-    <aside class="side">
-      <div>
-        <h2>Inside one input cell</h2>
-        <svg class="inset" viewBox="0 0 300 152" role="img"
-             aria-label="The previous latent supplies the value and the token embedding supplies the gate; their product is the input state">
-          <rect x="88" y="6" width="124" height="25" rx="3" fill="var(--blue-soft)" stroke="var(--blue)"/>
-          <text x="150" y="23" text-anchor="middle" font-size="12" fill="var(--ink)"><tspan font-style="italic">e</tspan><tspan font-size="8.5" dy="3">t</tspan><tspan dy="-3"> &#8855; </tspan><tspan font-style="italic">h</tspan><tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
-          <line x1="150" y1="57" x2="150" y2="35" stroke="var(--muted)" stroke-width="1.2"/>
-          <path d="M146.6,36 L153.4,36 L150,30 Z" fill="var(--muted)"/>
-          <circle cx="150" cy="66" r="8" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-          <path d="M147,63 L153,69 M153,63 L147,69" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round"/>
-          <path d="M51,110 V95 M51,72 V66 H142" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
-          <rect x="14" y="72" width="74" height="23" rx="11.5" fill="none" stroke="var(--muted)" stroke-dasharray="3 2"/>
-          <text x="51" y="88" text-anchor="middle" font-size="11" fill="var(--muted)">&#963;(<tspan font-style="italic">W</tspan><tspan font-size="8" dy="-3">G</tspan><tspan dy="3" font-style="italic">e</tspan><tspan font-size="8" dy="3">t</tspan><tspan dy="-3">)</tspan></text>
-          <text x="119" y="60" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-style="italic">gate</text>
-          <path d="M249,110 V95 M249,72 V66 H158" fill="none" stroke="var(--w4)" stroke-width="1.4"/>
-          <rect x="212" y="72" width="74" height="23" rx="3" fill="none" stroke="var(--w4)"/>
-          <text x="249" y="88" text-anchor="middle" font-size="11" fill="var(--w4)"><tspan font-style="italic">W</tspan><tspan font-size="8" dy="-3">U</tspan><tspan dy="3" font-style="italic">h</tspan><tspan font-size="8" dy="3">t&#8722;1</tspan></text>
-          <text x="181" y="60" text-anchor="middle" font-size="9.5" fill="var(--w4)" font-style="italic">value</text>
-          <rect x="8" y="110" width="86" height="25" rx="3" fill="none" stroke="var(--line)"/>
-          <text x="51" y="127" text-anchor="middle" font-size="12" fill="var(--ink)" font-style="italic">e<tspan font-size="8.5" dy="3">t</tspan></text>
-          <text x="51" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">token embedding</text>
-          <rect x="206" y="110" width="86" height="25" rx="3" fill="none" stroke="var(--w4)"/>
-          <text x="249" y="127" text-anchor="middle" font-size="12" fill="var(--w4)" font-style="italic">h<tspan font-size="8.5" dy="3">t&#8722;1</tspan></text>
-          <text x="249" y="149" text-anchor="middle" font-size="10" fill="var(--muted)">from the pass below</text>
-        </svg>
-      </div>
-      <div>
-        <h2>Latent chain</h2>
-        <table class="stattable">
-          <thead><tr><th>Regime</th><th>Hops</th><th>Back&nbsp;to</th></tr></thead>
-          <tbody>
-            <tr><th id="rTrain">training</th><td id="hTrain">&ndash;</td><td id="bTrain">&ndash;</td></tr>
-            <tr><th>inference</th><td id="hInf">&ndash;</td><td id="bInf">&ndash;</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </aside>
-  </div>
+  <section class="stage"><svg id="stage" role="img" aria-label="Training passes stacked bottom to top; each pass hands its top-layer latents up into the next pass's inputs, shifted one position"></svg></section>
 </main>
 
 <footer>Illustrative &mdash; 10 tokens, 5 layers, three passes. Hover any cell to trace its latent chain. <a href="https://arxiv.org/abs/2608.08888" target="_blank" rel="noopener">Full-Bandwidth Transformer, arXiv:2608.08888</a>.</footer>
@@ -252,7 +203,6 @@ function curve(p,t){
 const svg=document.getElementById('stage');
 const tickread=document.getElementById('tickread');
 const playBtn=document.getElementById('play');
-const [rTrain,hTrain,bTrain,hInf,bInf]=['rTrain','hTrain','bTrain','hInf','bInf'].map(i=>document.getElementById(i));
 
 // Everything drawn is rebuilt every frame, so the interactive targets cannot live
 // there: a mouse move would destroy the node it is over mid-gesture. They get their
@@ -307,7 +257,6 @@ function render(){
   drawLoss(s);
 
   if(!gHit) buildHits(); else svg.appendChild(gHit);   // keep the targets on top
-  drawHops();
   tickread.textContent=s>FSTEPS?`${s} / ${TOTAL} · back`:`${s} / ${TOTAL}`;
   playBtn.textContent=playing?'Pause':'Play';
 }
@@ -452,20 +401,6 @@ function drawBlock(p,s,now,back,ch){
   }
 }
 
-
-// Position t needs t-1 latent hops to match sequential decoding; a k-pass run can
-// only supply k-1 of them, however long the sequence is. That shortfall is the whole
-// difference between the training and inference recurrence, so put the two side by
-// side the way viz 01 puts its regimes side by side.
-function drawHops(){
-  const blank=[hTrain,bTrain,hInf,bInf];
-  if(!hover){ rTrain.textContent='training'; blank.forEach(e=>e.textContent='\u2013'); hTrain.className=''; return; }
-  const {p,t}=hover, c=chain(p,t);
-  rTrain.textContent=`pass ${p}`;
-  hTrain.textContent=c.hops;  bTrain.textContent=c.tail.t;
-  hInf.textContent=c.want;    bInf.textContent=1;
-  hTrain.className=c.hops===c.want?'blue':'';
-}
 
 function stop(){ playing=false; clearTimeout(timer); timer=null; render(); }
 // The backward half retraces rows the forward half already explained, so it moves
